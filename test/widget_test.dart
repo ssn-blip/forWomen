@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:forwomen/main.dart';
+import 'package:forwomen/core/utils/date_calc.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('DateCalc', () {
+    final lmp = DateTime(2026, 1, 1); // 마지막 생리 시작일
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    test('다음 생리 예정일 = LMP + 주기', () {
+      expect(DateCalc.nextPeriod(lmp, 28), DateTime(2026, 1, 29));
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('배란일 = 다음 생리 - 14일', () {
+      expect(DateCalc.ovulationDay(lmp, 28), DateTime(2026, 1, 15));
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('가임기는 배란 -5 ~ +1일', () {
+      final w = DateCalc.fertileWindow(lmp, 28);
+      expect(w.start, DateTime(2026, 1, 10));
+      expect(w.end, DateTime(2026, 1, 16));
+    });
+
+    test('출산 예정일 = LMP + 280일', () {
+      expect(DateCalc.dueDate(lmp), DateTime(2026, 10, 8));
+    });
+
+    test('임신 주차 계산', () {
+      final age = DateCalc.gestationalAge(lmp, DateTime(2026, 2, 26));
+      expect(age.week, 8);
+      expect(age.day, 0);
+    });
+
+    test('평균 주기 계산', () {
+      final starts = [
+        DateTime(2026, 1, 1),
+        DateTime(2026, 1, 29),
+        DateTime(2026, 2, 26),
+      ];
+      expect(DateCalc.averageCycleLength(starts), 28);
+    });
   });
 }
