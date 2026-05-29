@@ -32,7 +32,7 @@ class AddTestSheet extends ConsumerStatefulWidget {
 
 class _State extends ConsumerState<AddTestSheet> {
   DateTime _date = DateTime.now();
-  String _result = 'positive';
+  String _result = 'unknown';
   String? _photoPath;
   double? _ratio; // 자동 분석 T/C 비율
   bool _autoAnalyzed = false;
@@ -96,6 +96,34 @@ class _State extends ConsumerState<AddTestSheet> {
         'negative' => '음성',
         _ => '판독 불가',
       };
+
+  /// 결과를 직접 수정(오판 보정).
+  Future<void> _pickResult(Map<String, String> results) async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('결과 직접 선택',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            ...results.entries.map((e) => ListTile(
+                  title: Text(e.value),
+                  trailing: _result == e.key
+                      ? const Icon(Icons.check, color: Colors.purple)
+                      : null,
+                  onTap: () => Navigator.pop(context, e.key),
+                )),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) setState(() => _result = picked);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,34 +197,47 @@ class _State extends ConsumerState<AddTestSheet> {
                                 fontWeight: FontWeight.bold)),
                         const Spacer(),
                         if ((_ratio ?? 0) > 0)
-                          Text('T/C ${((_ratio ?? 0) * 100).round()}%',
+                          Text('수치 ${scoreFromRatio(_ratio ?? 0).toStringAsFixed(1)}/10',
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.purple)),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text('참고용 추정입니다. 아래에서 직접 확인·수정하세요.',
+                    const Text('참고용 추정입니다. 결과가 자동 설정됐어요(필요 시 수정).',
                         style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
-            const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            RadioGroup<String>(
-              groupValue: _result,
-              onChanged: (v) => setState(() => _result = v!),
-              child: Column(
-                children: results.entries
-                    .map((e) => RadioListTile<String>(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          value: e.key,
-                          title: Text(e.value),
-                        ))
-                    .toList(),
-              ),
+            // 결과(사진 분석으로 자동 설정, 필요 시 수정)
+            Row(
+              children: [
+                const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(results[_result] ?? _resultLabel(_result),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _pickResult(results),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('수정'),
+                ),
+              ],
             ),
+            if (!_autoAnalyzed)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Text('사진을 첨부하면 결과가 자동 분석돼요.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ),
             const SizedBox(height: 8),
             // 사진 첨부
             if (_photoPath != null)

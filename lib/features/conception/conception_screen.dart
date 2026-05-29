@@ -12,6 +12,7 @@ import '../../core/utils/date_calc.dart';
 import 'add_bbt_sheet.dart';
 import 'add_test_sheet.dart';
 import 'conception_providers.dart';
+import 'strip_analyzer.dart';
 import 'test_guide_sheet.dart';
 
 class ConceptionScreen extends ConsumerWidget {
@@ -86,6 +87,7 @@ class _TestTabState extends ConsumerState<_TestTab> {
                   showSelectedIcon: false,
                 ),
               ),
+              if (filtered.any((l) => (l.ratio ?? 0) > 0)) const _ScoreLegend(),
               Expanded(
                 child: filtered.isEmpty
                     ? const _EmptyHint(
@@ -145,8 +147,10 @@ class _TestTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final kindLabel = log.kind == 'pregnancy' ? '임신테스트' : '배란테스트';
-    final (resultLabel, color) = switch (log.result) {
+    final hasScore = (log.ratio ?? 0) > 0;
+    final score = scoreFromRatio(log.ratio ?? 0);
+    final dotColor = scoreColor(score);
+    final (resultLabel, resultColor) = switch (log.result) {
       'positive' => ('양성', AppTheme.period),
       'faint' => ('희미함', AppTheme.predicted),
       'negative' => ('음성', Colors.grey),
@@ -154,42 +158,102 @@ class _TestTile extends ConsumerWidget {
     };
 
     return Card(
-      child: ListTile(
-        leading: log.photoPath != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(File(log.photoPath!),
-                    width: 48, height: 48, fit: BoxFit.cover),
-              )
-            : CircleAvatar(
-                backgroundColor: color.withValues(alpha: 0.2),
-                child: Icon(Icons.science, color: color),
-              ),
-        title: Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        child: Row(
           children: [
-            Text(kindLabel),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
+            // 크롭된 스트립 썸네일 (가로)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: log.photoPath != null
+                  ? Image.file(File(log.photoPath!),
+                      width: 96, height: 44, fit: BoxFit.cover)
+                  : Container(
+                      width: 96,
+                      height: 44,
+                      color: Colors.grey.shade200,
+                      child: Icon(Icons.science,
+                          color: Colors.grey.shade500, size: 20),
+                    ),
+            ),
+            const SizedBox(width: 10),
+            // 점수 + 색 점 (배란) / 결과 배지 (임신)
+            if (hasScore) ...[
+              Container(
+                width: 12,
+                height: 12,
+                decoration:
+                    BoxDecoration(color: dotColor, shape: BoxShape.circle),
               ),
-              child: Text(resultLabel,
-                  style: TextStyle(
-                      color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 6),
+              Text(score.toStringAsFixed(1),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+            ] else
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: resultColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(resultLabel,
+                    style: TextStyle(
+                        color: resultColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+              ),
+            const Spacer(),
+            // 날짜·시간
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${DateFormat('yyyy년 M월 d일', 'ko').format(log.date)}\n'
+                  '${DateFormat('a hh시 mm분', 'ko').format(log.date)}',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () => ref.read(databaseProvider).deleteTestLog(log.id),
             ),
           ],
         ),
-        subtitle: Text(DateFormat('yyyy.MM.dd HH:mm', 'ko').format(log.date) +
-            ((log.ratio ?? 0) > 0
-                ? ' · T/C ${((log.ratio ?? 0) * 100).round()}%'
-                : '') +
-            (log.note != null ? ' · ${log.note}' : '')),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => ref.read(databaseProvider).deleteTestLog(log.id),
-        ),
+      ),
+    );
+  }
+}
+
+/// 점수 구간 범례 (0~4.9 / 5.0~8.9 / 9.0~10.0)
+class _ScoreLegend extends StatelessWidget {
+  const _ScoreLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget item(Color c, String label) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
+            const SizedBox(width: 5),
+            Text(label, style: const TextStyle(fontSize: 12)),
+          ],
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 6,
+        children: [
+          item(const Color(0xFF90CAF9), '0~4.9'),
+          item(const Color(0xFFA5D6A7), '5.0~8.9'),
+          item(const Color(0xFF43A047), '9.0~10.0'),
+        ],
       ),
     );
   }

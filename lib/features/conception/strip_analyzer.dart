@@ -47,67 +47,74 @@ Future<StripAnalysis> analyzeStrip(String srcPath, Rect cropFrac) async {
       p.join(dir.path, 'strip_${DateTime.now().millisecondsSinceEpoch}.png');
   await File(outPath).writeAsBytes(img.encodePng(crop));
 
-  // 분석은 가로 축소본으로(속도).
-  final small = crop.width > 400 ? img.copyResize(crop, width: 400) : crop;
+  // 분석용 축소본(속도). 가로/세로 모두 처리하기 위해 긴 변 기준 축소.
+  final small = (crop.width > 400 || crop.height > 400)
+      ? img.copyResize(crop,
+          width: crop.width >= crop.height ? 400 : null,
+          height: crop.height > crop.width ? 400 : null)
+      : crop;
   final sw = small.width, sh = small.height;
 
-  // 열별 어두움(255-휘도) 평균 프로파일.
-  final colDark = List<double>.filled(sw, 0);
-  for (var cx = 0; cx < sw; cx++) {
-    double sum = 0;
-    for (var cy = 0; cy < sh; cy++) {
-      final px = small.getPixel(cx, cy);
-      final lum = 0.299 * px.r + 0.587 * px.g + 0.114 * px.b;
-      sum += 255 - lum;
-    }
-    colDark[cx] = sum / sh;
-  }
-
-  // 배경(멤브레인) 기준선 = 하위 25퍼센타일.
-  final sorted = [...colDark]..sort();
-  final baseline = sorted[(sorted.length * 0.25).floor()];
-  final rel = colDark.map((d) => (d - baseline).clamp(0.0, 1e9)).toList();
-
-  // 가장 진한 선 두 개 찾기(서로 떨어진).
-  ({int x, double v}) peakIn(int from, int to) {
-    var bx = from;
-    var bv = -1.0;
-    for (var i = from; i < to; i++) {
-      if (rel[i] > bv) {
-        bv = rel[i];
-        bx = i;
+  // 1차원 어두움 프로파일에서 (왼쪽선=C, 오른쪽선=T) 값을 찾는다.
+  ({double cVal, double tVal, double maxV}) twoLines(List<double> dark) {
+    final sorted = [...dark]..sort();
+    final baseline = sorted[(sorted.length * 0.25).floor()];
+    final rel = dark.map((d) => (d - baseline).clamp(0.0, 1e9)).toList();
+    final n = rel.length;
+    var x1 = 0;
+    var v1 = -1.0;
+    for (var i = 0; i < n; i++) {
+      if (rel[i] > v1) {
+        v1 = rel[i];
+        x1 = i;
       }
     }
-    return (x: bx, v: bv);
+    final gap = (n * 0.08).round().clamp(3, n);
+    var x2 = -1;
+    var v2 = -1.0;
+    for (var i = 0; i < n; i++) {
+      if ((i - x1).abs() < gap) continue;
+      if (rel[i] > v2) {
+        v2 = rel[i];
+        x2 = i;
+      }
+    }
+    final has2 = x2 >= 0 && v2 > 0;
+    final leftV = has2 ? (x1 < x2 ? v1 : v2) : v1;
+    final rightV = has2 ? (x1 < x2 ? v2 : v1) : 0.0;
+    return (cVal: leftV, tVal: rightV, maxV: v1);
   }
 
-  final p1 = peakIn(0, sw);
-  final gap = (sw * 0.08).round().clamp(3, sw);
-  var bestX2 = -1;
-  var bestV2 = -1.0;
-  for (var i = 0; i < sw; i++) {
-    if ((i - p1.x).abs() < gap) continue;
-    if (rel[i] > bestV2) {
-      bestV2 = rel[i];
-      bestX2 = i;
+  // 가로 스트립(세로선) → 열 프로파일 / 세로 스트립(가로선) → 행 프로파일.
+  final colDark = List<double>.filled(sw, 0);
+  final rowDark = List<double>.filled(sh, 0);
+  for (var cy = 0; cy < sh; cy++) {
+    for (var cx = 0; cx < sw; cx++) {
+      final px = small.getPixel(cx, cy);
+      final dark = 255 - (0.299 * px.r + 0.587 * px.g + 0.114 * px.b);
+      colDark[cx] += dark / sh;
+      rowDark[cy] += dark / sw;
     }
   }
-
-  // C = 더 진한 선, T = 나머지.
-  final cVal = p1.v;
-  final tVal = bestX2 >= 0 ? bestV2 : 0.0;
+  final byCol = twoLines(colDark);
+  final byRow = twoLines(rowDark);
+  // 두 번째 선이 더 뚜렷한 축(스트립 방향)을 선택.
+  final r = byCol.tVal >= byRow.tVal ? byCol : byRow;
+  final cVal = r.cVal; // 컨트롤(첫 선)
+  final tVal = r.tVal; // 테스트(둘째 선)
 
   const minControl = 8.0; // 컨트롤선 최소 진하기
   String suggested;
-  double ratio = 0;
+  double ratio = 0; // T/C
   if (cVal < minControl) {
     suggested = 'unknown'; // 선이 거의 안 보임 → 판독 불가
   } else {
     final minSecond = (0.1 * cVal).clamp(4.0, 1e9);
     if (tVal < minSecond) {
       suggested = 'negative'; // 컨트롤선만 → 음성
+      ratio = 0;
     } else {
-      ratio = (tVal / cVal).clamp(0, 2).toDouble();
+      ratio = (tVal / cVal).toDouble();
       if (ratio >= 0.7) {
         suggested = 'positive';
       } else if (ratio >= 0.15) {
@@ -119,6 +126,16 @@ Future<StripAnalysis> analyzeStrip(String srcPath, Rect cropFrac) async {
   }
 
   return StripAnalysis(croppedPath: outPath, ratio: ratio, suggested: suggested);
+}
+
+/// T/C 비율을 0~10 점수로 변환 (LH 진하기 지표).
+double scoreFromRatio(double ratio) => (ratio.clamp(0.0, 1.0) * 10);
+
+/// 점수 구간별 색 (참고 앱과 동일한 의미).
+Color scoreColor(double score) {
+  if (score >= 9.0) return const Color(0xFF43A047); // 진한 초록
+  if (score >= 5.0) return const Color(0xFFA5D6A7); // 연한 초록
+  return const Color(0xFF90CAF9); // 연한 파랑
 }
 
 /// 스트립 사진에서 결과창을 크롭하고 분석하는 화면.
