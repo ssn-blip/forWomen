@@ -84,7 +84,7 @@ class _TestTab extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.pregnant_woman),
-              title: const Text('임신테스트 (임테기)'),
+              title: const Text('임신테스트'),
               onTap: () {
                 Navigator.pop(context);
                 AddTestSheet.show(context, kind: 'pregnancy');
