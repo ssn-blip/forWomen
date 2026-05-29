@@ -70,7 +70,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               _QuickAction(
                 icon: Icons.science,
-                label: '임테기',
+                label: '테스트',
                 onTap: () => context.push('/conception'),
               ),
               _QuickAction(
