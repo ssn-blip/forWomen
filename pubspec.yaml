@@ -53,6 +53,7 @@ dependencies:
   # share_plus 10.x는 win32 ^5 사용 → file_picker(win32 ^5.9)와 충돌 없음.
   share_plus: ^10.1.4
   file_picker: ^8.3.7
+  image: ^4.8.0
 
 # 앱 아이콘 (핑크 그라데이션 + 흰 하트)
 flutter_launcher_icons:

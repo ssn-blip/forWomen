@@ -849,6 +849,15 @@ class $TestLogsTable extends TestLogs with TableInfo<$TestLogsTable, TestLog> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ratioMeta = const VerificationMeta('ratio');
+  @override
+  late final GeneratedColumn<double> ratio = GeneratedColumn<double>(
+    'ratio',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -878,6 +887,7 @@ class $TestLogsTable extends TestLogs with TableInfo<$TestLogsTable, TestLog> {
     kind,
     result,
     photoPath,
+    ratio,
     note,
     synced,
   ];
@@ -926,6 +936,12 @@ class $TestLogsTable extends TestLogs with TableInfo<$TestLogsTable, TestLog> {
         photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
       );
     }
+    if (data.containsKey('ratio')) {
+      context.handle(
+        _ratioMeta,
+        ratio.isAcceptableOrUnknown(data['ratio']!, _ratioMeta),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -967,6 +983,10 @@ class $TestLogsTable extends TestLogs with TableInfo<$TestLogsTable, TestLog> {
         DriftSqlType.string,
         data['${effectivePrefix}photo_path'],
       ),
+      ratio: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ratio'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -994,8 +1014,11 @@ class TestLog extends DataClass implements Insertable<TestLog> {
   /// 'positive' | 'negative' | 'faint'(희미) | 'unknown'
   final String result;
 
-  /// 촬영 사진 로컬 경로
+  /// 촬영(또는 크롭) 사진 로컬 경로
   final String? photoPath;
+
+  /// 자동 분석 진하기 비율 T/C (0~1+, 사진 분석 시). 없으면 수동 입력.
+  final double? ratio;
   final String? note;
   final bool synced;
   const TestLog({
@@ -1004,6 +1027,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
     required this.kind,
     required this.result,
     this.photoPath,
+    this.ratio,
     this.note,
     required this.synced,
   });
@@ -1016,6 +1040,9 @@ class TestLog extends DataClass implements Insertable<TestLog> {
     map['result'] = Variable<String>(result);
     if (!nullToAbsent || photoPath != null) {
       map['photo_path'] = Variable<String>(photoPath);
+    }
+    if (!nullToAbsent || ratio != null) {
+      map['ratio'] = Variable<double>(ratio);
     }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -1033,6 +1060,9 @@ class TestLog extends DataClass implements Insertable<TestLog> {
       photoPath: photoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(photoPath),
+      ratio: ratio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ratio),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       synced: Value(synced),
     );
@@ -1049,6 +1079,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
       kind: serializer.fromJson<String>(json['kind']),
       result: serializer.fromJson<String>(json['result']),
       photoPath: serializer.fromJson<String?>(json['photoPath']),
+      ratio: serializer.fromJson<double?>(json['ratio']),
       note: serializer.fromJson<String?>(json['note']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
@@ -1062,6 +1093,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
       'kind': serializer.toJson<String>(kind),
       'result': serializer.toJson<String>(result),
       'photoPath': serializer.toJson<String?>(photoPath),
+      'ratio': serializer.toJson<double?>(ratio),
       'note': serializer.toJson<String?>(note),
       'synced': serializer.toJson<bool>(synced),
     };
@@ -1073,6 +1105,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
     String? kind,
     String? result,
     Value<String?> photoPath = const Value.absent(),
+    Value<double?> ratio = const Value.absent(),
     Value<String?> note = const Value.absent(),
     bool? synced,
   }) => TestLog(
@@ -1081,6 +1114,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
     kind: kind ?? this.kind,
     result: result ?? this.result,
     photoPath: photoPath.present ? photoPath.value : this.photoPath,
+    ratio: ratio.present ? ratio.value : this.ratio,
     note: note.present ? note.value : this.note,
     synced: synced ?? this.synced,
   );
@@ -1091,6 +1125,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
       kind: data.kind.present ? data.kind.value : this.kind,
       result: data.result.present ? data.result.value : this.result,
       photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      ratio: data.ratio.present ? data.ratio.value : this.ratio,
       note: data.note.present ? data.note.value : this.note,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
@@ -1104,6 +1139,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
           ..write('kind: $kind, ')
           ..write('result: $result, ')
           ..write('photoPath: $photoPath, ')
+          ..write('ratio: $ratio, ')
           ..write('note: $note, ')
           ..write('synced: $synced')
           ..write(')'))
@@ -1112,7 +1148,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
 
   @override
   int get hashCode =>
-      Object.hash(id, date, kind, result, photoPath, note, synced);
+      Object.hash(id, date, kind, result, photoPath, ratio, note, synced);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1122,6 +1158,7 @@ class TestLog extends DataClass implements Insertable<TestLog> {
           other.kind == this.kind &&
           other.result == this.result &&
           other.photoPath == this.photoPath &&
+          other.ratio == this.ratio &&
           other.note == this.note &&
           other.synced == this.synced);
 }
@@ -1132,6 +1169,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
   final Value<String> kind;
   final Value<String> result;
   final Value<String?> photoPath;
+  final Value<double?> ratio;
   final Value<String?> note;
   final Value<bool> synced;
   const TestLogsCompanion({
@@ -1140,6 +1178,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
     this.kind = const Value.absent(),
     this.result = const Value.absent(),
     this.photoPath = const Value.absent(),
+    this.ratio = const Value.absent(),
     this.note = const Value.absent(),
     this.synced = const Value.absent(),
   });
@@ -1149,6 +1188,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
     required String kind,
     required String result,
     this.photoPath = const Value.absent(),
+    this.ratio = const Value.absent(),
     this.note = const Value.absent(),
     this.synced = const Value.absent(),
   }) : date = Value(date),
@@ -1160,6 +1200,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
     Expression<String>? kind,
     Expression<String>? result,
     Expression<String>? photoPath,
+    Expression<double>? ratio,
     Expression<String>? note,
     Expression<bool>? synced,
   }) {
@@ -1169,6 +1210,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
       if (kind != null) 'kind': kind,
       if (result != null) 'result': result,
       if (photoPath != null) 'photo_path': photoPath,
+      if (ratio != null) 'ratio': ratio,
       if (note != null) 'note': note,
       if (synced != null) 'synced': synced,
     });
@@ -1180,6 +1222,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
     Value<String>? kind,
     Value<String>? result,
     Value<String?>? photoPath,
+    Value<double?>? ratio,
     Value<String?>? note,
     Value<bool>? synced,
   }) {
@@ -1189,6 +1232,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
       kind: kind ?? this.kind,
       result: result ?? this.result,
       photoPath: photoPath ?? this.photoPath,
+      ratio: ratio ?? this.ratio,
       note: note ?? this.note,
       synced: synced ?? this.synced,
     );
@@ -1212,6 +1256,9 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
     if (photoPath.present) {
       map['photo_path'] = Variable<String>(photoPath.value);
     }
+    if (ratio.present) {
+      map['ratio'] = Variable<double>(ratio.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -1229,6 +1276,7 @@ class TestLogsCompanion extends UpdateCompanion<TestLog> {
           ..write('kind: $kind, ')
           ..write('result: $result, ')
           ..write('photoPath: $photoPath, ')
+          ..write('ratio: $ratio, ')
           ..write('note: $note, ')
           ..write('synced: $synced')
           ..write(')'))
@@ -6343,6 +6391,7 @@ typedef $$TestLogsTableCreateCompanionBuilder =
       required String kind,
       required String result,
       Value<String?> photoPath,
+      Value<double?> ratio,
       Value<String?> note,
       Value<bool> synced,
     });
@@ -6353,6 +6402,7 @@ typedef $$TestLogsTableUpdateCompanionBuilder =
       Value<String> kind,
       Value<String> result,
       Value<String?> photoPath,
+      Value<double?> ratio,
       Value<String?> note,
       Value<bool> synced,
     });
@@ -6388,6 +6438,11 @@ class $$TestLogsTableFilterComposer
 
   ColumnFilters<String> get photoPath => $composableBuilder(
     column: $table.photoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ratio => $composableBuilder(
+    column: $table.ratio,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6436,6 +6491,11 @@ class $$TestLogsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get ratio => $composableBuilder(
+    column: $table.ratio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -6470,6 +6530,9 @@ class $$TestLogsTableAnnotationComposer
 
   GeneratedColumn<String> get photoPath =>
       $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<double> get ratio =>
+      $composableBuilder(column: $table.ratio, builder: (column) => column);
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
@@ -6511,6 +6574,7 @@ class $$TestLogsTableTableManager
                 Value<String> kind = const Value.absent(),
                 Value<String> result = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
+                Value<double?> ratio = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
               }) => TestLogsCompanion(
@@ -6519,6 +6583,7 @@ class $$TestLogsTableTableManager
                 kind: kind,
                 result: result,
                 photoPath: photoPath,
+                ratio: ratio,
                 note: note,
                 synced: synced,
               ),
@@ -6529,6 +6594,7 @@ class $$TestLogsTableTableManager
                 required String kind,
                 required String result,
                 Value<String?> photoPath = const Value.absent(),
+                Value<double?> ratio = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
               }) => TestLogsCompanion.insert(
@@ -6537,6 +6603,7 @@ class $$TestLogsTableTableManager
                 kind: kind,
                 result: result,
                 photoPath: photoPath,
+                ratio: ratio,
                 note: note,
                 synced: synced,
               ),

@@ -148,7 +148,10 @@ class _TestTile extends ConsumerWidget {
             ),
           ],
         ),
-        subtitle: Text(DateFormat('yyyy.MM.dd', 'ko').format(log.date) +
+        subtitle: Text(DateFormat('yyyy.MM.dd HH:mm', 'ko').format(log.date) +
+            ((log.ratio ?? 0) > 0
+                ? ' · T/C ${((log.ratio ?? 0) * 100).round()}%'
+                : '') +
             (log.note != null ? ' · ${log.note}' : '')),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),

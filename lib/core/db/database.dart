@@ -47,8 +47,11 @@ class TestLogs extends Table {
   /// 'positive' | 'negative' | 'faint'(희미) | 'unknown'
   TextColumn get result => text()();
 
-  /// 촬영 사진 로컬 경로
+  /// 촬영(또는 크롭) 사진 로컬 경로
   TextColumn get photoPath => text().nullable()();
+
+  /// 자동 분석 진하기 비율 T/C (0~1+, 사진 분석 시). 없으면 수동 입력.
+  RealColumn get ratio => real().nullable()();
   TextColumn get note => text().nullable()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 }
@@ -235,7 +238,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -261,6 +264,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await m.createTable(dayEvents);
+          }
+          if (from < 7) {
+            await m.addColumn(testLogs, testLogs.ratio);
           }
         },
       );

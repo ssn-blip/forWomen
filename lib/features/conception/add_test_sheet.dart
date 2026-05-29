@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/utils/image_storage.dart';
+import 'strip_analyzer.dart';
 
 /// 임테기/배란테스트 기록 입력 시트. 사진 첨부 가능.
 class AddTestSheet extends ConsumerStatefulWidget {
@@ -33,6 +34,8 @@ class _State extends ConsumerState<AddTestSheet> {
   DateTime _date = DateTime.now();
   String _result = 'positive';
   String? _photoPath;
+  double? _ratio; // 자동 분석 T/C 비율
+  bool _autoAnalyzed = false;
   final _noteCtrl = TextEditingController();
   final _picker = ImagePicker();
 
@@ -46,9 +49,32 @@ class _State extends ConsumerState<AddTestSheet> {
 
   Future<void> _pickPhoto(ImageSource source) async {
     final picked = await _picker.pickImage(source: source, maxWidth: 1600);
-    if (picked == null) return;
-    final saved = await ImageStorage.persist(picked.path, subdir: 'tests');
-    setState(() => _photoPath = saved);
+    if (picked == null || !mounted) return;
+
+    // 크롭·자동 분석 화면으로 이동.
+    final analysis = await Navigator.of(context).push<StripAnalysis>(
+      MaterialPageRoute(
+        builder: (_) => TestStripCropScreen(srcPath: picked.path),
+      ),
+    );
+
+    if (analysis != null) {
+      setState(() {
+        _photoPath = analysis.croppedPath;
+        _ratio = analysis.ratio;
+        _result = analysis.suggested;
+        _autoAnalyzed = true;
+      });
+    } else {
+      // 분석을 건너뛰면 원본 사진만 첨부.
+      final saved = await ImageStorage.persist(picked.path, subdir: 'tests');
+      if (mounted) {
+        setState(() {
+          _photoPath = saved;
+          _autoAnalyzed = false;
+        });
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -57,11 +83,19 @@ class _State extends ConsumerState<AddTestSheet> {
           kind: Value(widget.kind),
           result: Value(_result),
           photoPath: Value(_photoPath),
+          ratio: Value(_ratio),
           note: Value(
               _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim()),
         ));
     if (mounted) Navigator.pop(context);
   }
+
+  String _resultLabel(String key) => switch (key) {
+        'positive' => '양성',
+        'faint' => '희미한 양성',
+        'negative' => '음성',
+        _ => '판독 불가',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +147,40 @@ class _State extends ConsumerState<AddTestSheet> {
               },
             ),
             const SizedBox(height: 8),
+            if (_autoAnalyzed)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome,
+                            size: 18, color: Colors.purple),
+                        const SizedBox(width: 6),
+                        Text('자동 추정: ${_resultLabel(_result)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold)),
+                        const Spacer(),
+                        if ((_ratio ?? 0) > 0)
+                          Text('T/C ${((_ratio ?? 0) * 100).round()}%',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('참고용 추정입니다. 아래에서 직접 확인·수정하세요.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
             const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             RadioGroup<String>(
@@ -132,10 +200,15 @@ class _State extends ConsumerState<AddTestSheet> {
             const SizedBox(height: 8),
             // 사진 첨부
             if (_photoPath != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(File(_photoPath!),
-                    height: 160, width: double.infinity, fit: BoxFit.cover),
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.file(File(_photoPath!), fit: BoxFit.contain),
               ),
             Row(
               children: [
