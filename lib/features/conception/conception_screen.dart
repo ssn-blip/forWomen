@@ -177,20 +177,62 @@ class _BbtTab extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
         data: (logs) {
-          if (logs.length < 2) {
+          if (logs.isEmpty) {
             return const _EmptyHint(
               icon: Icons.thermostat,
-              text: '매일 아침 기초체온을 기록하면\n배란 시점을 추정할 수 있어요 (2일 이상)',
+              text: '매일 아침 기초체온을 기록하면\n배란 시점을 추정할 수 있어요',
             );
           }
+          final fmt = DateFormat('yyyy.MM.dd (E)', 'ko');
+          // 목록은 최신순.
+          final recent = logs.reversed.toList();
           return ListView(
             padding: const EdgeInsets.fromLTRB(12, 16, 12, 96),
             children: [
-              SizedBox(height: 260, child: _BbtChart(logs: logs)),
+              if (logs.length >= 2) ...[
+                SizedBox(height: 240, child: _BbtChart(logs: logs)),
+                const SizedBox(height: 8),
+                const Text('배란 후에는 체온이 약 0.3~0.5℃ 상승해 고온기가 유지됩니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ] else
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text('2일 이상 기록하면 변화 그래프가 표시돼요.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ),
               const SizedBox(height: 8),
-              const Text('배란 후에는 체온이 약 0.3~0.5℃ 상승해 고온기가 유지됩니다.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Text('기록',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              ...recent.map((log) => Card(
+                    child: ListTile(
+                      onTap: () => AddBbtSheet.show(context, existing: log),
+                      leading: const CircleAvatar(
+                        backgroundColor: AppTheme.primary,
+                        child: Icon(Icons.thermostat,
+                            color: Colors.white, size: 20),
+                      ),
+                      title: Text(fmt.format(log.date)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('${log.temperature}℃',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            onPressed: () =>
+                                ref.read(databaseProvider).deleteBbtLog(log.id),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
             ],
           );
         },

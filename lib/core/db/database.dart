@@ -290,6 +290,12 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertBbtLog(BbtLogsCompanion entry) =>
       into(bbtLogs).insert(entry);
 
+  Future<bool> updateBbtLog(BbtLog entry) =>
+      update(bbtLogs).replace(entry);
+
+  Future<int> deleteBbtLog(int id) =>
+      (delete(bbtLogs)..where((t) => t.id.equals(id))).go();
+
   // ── 임테기/배란테스트 ────────────────────────────────────────────────
   Stream<List<TestLog>> watchTestLogs() =>
       (select(testLogs)..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();

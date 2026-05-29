@@ -7,15 +7,17 @@ import 'package:intl/intl.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 
-/// 기초체온 입력 시트.
+/// 기초체온 입력/편집 시트. [existing]이 있으면 편집 모드.
 class AddBbtSheet extends ConsumerStatefulWidget {
-  const AddBbtSheet({super.key});
+  const AddBbtSheet({super.key, this.existing});
 
-  static Future<void> show(BuildContext context) {
+  final BbtLog? existing;
+
+  static Future<void> show(BuildContext context, {BbtLog? existing}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const AddBbtSheet(),
+      builder: (_) => AddBbtSheet(existing: existing),
     );
   }
 
@@ -24,8 +26,19 @@ class AddBbtSheet extends ConsumerStatefulWidget {
 }
 
 class _State extends ConsumerState<AddBbtSheet> {
-  DateTime _date = DateTime.now();
-  final _tempCtrl = TextEditingController(text: '36.5');
+  late DateTime _date;
+  late final TextEditingController _tempCtrl;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _date = e?.date ?? DateTime.now();
+    _tempCtrl = TextEditingController(
+        text: e != null ? e.temperature.toString() : '36.5');
+  }
 
   @override
   void dispose() {
@@ -40,10 +53,16 @@ class _State extends ConsumerState<AddBbtSheet> {
           const SnackBar(content: Text('34~42 사이의 체온을 입력해 주세요')));
       return;
     }
-    await ref.read(databaseProvider).insertBbtLog(BbtLogsCompanion(
-          date: Value(_date),
-          temperature: Value(temp),
-        ));
+    final db = ref.read(databaseProvider);
+    final e = widget.existing;
+    if (e != null) {
+      await db.updateBbtLog(e.copyWith(date: _date, temperature: temp));
+    } else {
+      await db.insertBbtLog(BbtLogsCompanion(
+        date: Value(_date),
+        temperature: Value(temp),
+      ));
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -60,9 +79,10 @@ class _State extends ConsumerState<AddBbtSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text('기초체온 기록',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Center(
+            child: Text(_isEditing ? '기초체온 수정' : '기초체온 기록',
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 16),
           ListTile(
