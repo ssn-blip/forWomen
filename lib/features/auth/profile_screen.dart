@@ -59,14 +59,7 @@ class ProfileScreen extends ConsumerWidget {
           _SectionTile(
             icon: Icons.cloud_sync,
             title: '백업·동기화',
-            onTap: () => _showInfoDialog(
-              context,
-              '백업·동기화',
-              '모든 기록은 기기 내부에 안전하게 저장됩니다.\n\n'
-                  '여러 기기 간 동기화와 클라우드 백업은 Google/Naver 로그인 및 '
-                  'Firebase 연동 후 활성화됩니다. (각 테이블에 동기화 준비가 되어 있어요.)\n\n'
-                  '자세한 연동 절차는 SETUP.md를 참고하세요.',
-            ),
+            onTap: () => context.push('/backup'),
           ),
           _SectionTile(
             icon: Icons.privacy_tip,

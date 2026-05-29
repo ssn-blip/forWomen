@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/profile_screen.dart';
+import '../../features/backup/backup_screen.dart';
 import '../../features/baby/baby_screen.dart';
 import '../../features/conception/conception_screen.dart';
 import '../../features/cycle/cycle_screen.dart';
@@ -58,6 +59,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/info',
         builder: (context, state) => const InfoScreen(),
+      ),
+      GoRoute(
+        path: '/backup',
+        builder: (context, state) => const BackupScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
