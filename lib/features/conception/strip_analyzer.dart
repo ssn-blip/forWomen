@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -138,6 +139,95 @@ Color scoreColor(double score) {
   return const Color(0xFF90CAF9); // 연한 파랑
 }
 
+/// 사용자가 콕 찍은 C선·T선 점(이미지 비율)으로 진하기를 측정해 결과를 추정한다.
+/// 배경·기울기에 강함(해당 지점만 분석).
+Future<StripAnalysis> analyzeStripPoints(
+    String srcPath, Offset cFrac, Offset tFrac) async {
+  final bytes = await File(srcPath).readAsBytes();
+  var im = img.decodeImage(bytes);
+  if (im == null) throw Exception('이미지를 읽을 수 없습니다.');
+  im = img.bakeOrientation(im);
+
+  final base = (im.width > 800 || im.height > 800)
+      ? img.copyResize(im,
+          width: im.width >= im.height ? 800 : null,
+          height: im.height > im.width ? 800 : null)
+      : im;
+  final w = base.width, h = base.height;
+
+  double darkAt(int x, int y) {
+    x = x.clamp(0, w - 1);
+    y = y.clamp(0, h - 1);
+    final px = base.getPixel(x, y);
+    return 255 - (0.299 * px.r + 0.587 * px.g + 0.114 * px.b);
+  }
+
+  final half = (w * 0.012).round().clamp(2, 30);
+  double patch(double fx, double fy) {
+    final cx = (fx * w).round(), cy = (fy * h).round();
+    double s = 0;
+    var n = 0;
+    for (var dy = -half; dy <= half; dy++) {
+      for (var dx = -half; dx <= half; dx++) {
+        s += darkAt(cx + dx, cy + dy);
+        n++;
+      }
+    }
+    return s / n;
+  }
+
+  // 선 진하기 - 주변(가장 밝은 이웃=멤브레인) 배경.
+  double rel(Offset f) {
+    final line = patch(f.dx, f.dy);
+    final ox = half * 4 / w, oy = half * 4 / h;
+    final bgs = [
+      patch((f.dx - ox).clamp(0.0, 1.0), f.dy),
+      patch((f.dx + ox).clamp(0.0, 1.0), f.dy),
+      patch(f.dx, (f.dy - oy).clamp(0.0, 1.0)),
+      patch(f.dx, (f.dy + oy).clamp(0.0, 1.0)),
+    ];
+    final bg = bgs.reduce((a, b) => a < b ? a : b);
+    return (line - bg).clamp(0.0, 1e9);
+  }
+
+  final cRel = rel(cFrac);
+  final tRel = rel(tFrac);
+
+  const minControl = 6.0;
+  String suggested;
+  double ratio = 0;
+  if (cRel < minControl) {
+    suggested = 'unknown';
+  } else if (tRel < (0.1 * cRel).clamp(3.0, 1e9)) {
+    suggested = 'negative';
+  } else {
+    ratio = tRel / cRel;
+    suggested =
+        ratio >= 0.7 ? 'positive' : (ratio >= 0.15 ? 'faint' : 'negative');
+  }
+
+  // 두 점을 감싸는 영역을 크롭(썸네일).
+  const pad = 0.05;
+  final x0 = ((math.min(cFrac.dx, tFrac.dx)) - pad).clamp(0.0, 1.0);
+  final y0 = ((math.min(cFrac.dy, tFrac.dy)) - pad).clamp(0.0, 1.0);
+  final x1 = ((math.max(cFrac.dx, tFrac.dx)) + pad).clamp(0.0, 1.0);
+  final y1 = ((math.max(cFrac.dy, tFrac.dy)) + pad).clamp(0.0, 1.0);
+  final cx = (x0 * im.width).round();
+  final cy = (y0 * im.height).round();
+  final cw = ((x1 - x0) * im.width).round().clamp(1, im.width - cx);
+  final ch = ((y1 - y0) * im.height).round().clamp(1, im.height - cy);
+  final crop = img.copyCrop(im, x: cx, y: cy, width: cw, height: ch);
+
+  final docs = await getApplicationDocumentsDirectory();
+  final dir = Directory(p.join(docs.path, 'tests'));
+  if (!await dir.exists()) await dir.create(recursive: true);
+  final outPath =
+      p.join(dir.path, 'strip_${DateTime.now().millisecondsSinceEpoch}.png');
+  await File(outPath).writeAsBytes(img.encodePng(crop));
+
+  return StripAnalysis(croppedPath: outPath, ratio: ratio, suggested: suggested);
+}
+
 /// 스트립 사진에서 결과창을 크롭하고 분석하는 화면.
 /// 분석 결과([StripAnalysis])를 Navigator.pop으로 돌려준다.
 class TestStripCropScreen extends StatefulWidget {
@@ -151,7 +241,10 @@ class TestStripCropScreen extends StatefulWidget {
 
 class _TestStripCropScreenState extends State<TestStripCropScreen> {
   ui.Image? _img;
-  Rect? _crop; // 표시 좌표계 기준
+  String _mode = 'tap'; // 'tap' | 'crop'
+  Rect? _crop; // 크롭 모드(표시 좌표)
+  Offset? _cPoint; // 탭 모드 C선 (비율)
+  Offset? _tPoint; // 탭 모드 T선 (비율)
   Size _disp = Size.zero;
   bool _busy = false;
 
@@ -168,17 +261,39 @@ class _TestStripCropScreenState extends State<TestStripCropScreen> {
     setState(() => _img = frame.image);
   }
 
+  void _onTap(Offset local) {
+    if (_disp == Size.zero) return;
+    final f = Offset(
+      (local.dx / _disp.width).clamp(0.0, 1.0),
+      (local.dy / _disp.height).clamp(0.0, 1.0),
+    );
+    setState(() {
+      if (_cPoint == null) {
+        _cPoint = f;
+      } else if (_tPoint == null) {
+        _tPoint = f;
+      } else {
+        _cPoint = f; // 다시 C부터
+        _tPoint = null;
+      }
+    });
+  }
+
   Future<void> _analyze() async {
-    if (_crop == null || _disp == Size.zero) return;
     setState(() => _busy = true);
     try {
-      final frac = Rect.fromLTWH(
-        (_crop!.left / _disp.width).clamp(0.0, 1.0),
-        (_crop!.top / _disp.height).clamp(0.0, 1.0),
-        (_crop!.width / _disp.width).clamp(0.0, 1.0),
-        (_crop!.height / _disp.height).clamp(0.0, 1.0),
-      );
-      final result = await analyzeStrip(widget.srcPath, frac);
+      final StripAnalysis result;
+      if (_mode == 'tap') {
+        result = await analyzeStripPoints(widget.srcPath, _cPoint!, _tPoint!);
+      } else {
+        final frac = Rect.fromLTWH(
+          (_crop!.left / _disp.width).clamp(0.0, 1.0),
+          (_crop!.top / _disp.height).clamp(0.0, 1.0),
+          (_crop!.width / _disp.width).clamp(0.0, 1.0),
+          (_crop!.height / _disp.height).clamp(0.0, 1.0),
+        );
+        result = await analyzeStrip(widget.srcPath, frac);
+      }
       if (mounted) Navigator.pop(context, result);
     } catch (e) {
       if (mounted) {
@@ -189,22 +304,51 @@ class _TestStripCropScreenState extends State<TestStripCropScreen> {
     }
   }
 
+  Widget _marker(String label) => Container(
+        decoration: const BoxDecoration(
+            color: Colors.pinkAccent, shape: BoxShape.circle),
+        alignment: Alignment.center,
+        child: Text(label,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold)),
+      );
+
   @override
   Widget build(BuildContext context) {
     final image = _img;
+    final isTap = _mode == 'tap';
+    final canAnalyze = isTap
+        ? (_cPoint != null && _tPoint != null)
+        : true;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('결과창 선택')),
+      appBar: AppBar(title: const Text('결과창 분석')),
       body: image == null
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(12),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'tap', label: Text('C·T 선 탭')),
+                      ButtonSegment(value: 'crop', label: Text('영역 크롭')),
+                    ],
+                    selected: {_mode},
+                    onSelectionChanged: (s) => setState(() => _mode = s.first),
+                    showSelectedIcon: false,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'C/T 라인이 보이는 결과창에 박스를 맞춰주세요.\n'
-                    '(스트립을 가로로 두면 인식이 잘 됩니다)',
+                    isTap
+                        ? '두 손가락으로 확대해 ① C선 ② T선 순서로 탭하세요.'
+                        : 'C/T 결과창에 박스를 맞추세요. (두 손가락으로 확대 가능)',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ),
                 Expanded(
@@ -217,41 +361,82 @@ class _TestStripCropScreenState extends State<TestStripCropScreen> {
                       dw = dh * aspect;
                     }
                     _disp = Size(dw, dh);
-                    _crop ??= Rect.fromLTWH(dw * 0.1, dh * 0.3, dw * 0.8, dh * 0.4);
-                    return Center(
-                      child: SizedBox(
-                        width: dw,
-                        height: dh,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Image.file(File(widget.srcPath),
-                                  fit: BoxFit.fill),
-                            ),
+                    _crop ??=
+                        Rect.fromLTWH(dw * 0.1, dh * 0.3, dw * 0.8, dh * 0.4);
+
+                    final imageLayer = SizedBox(
+                      width: dw,
+                      height: dh,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child:
+                                Image.file(File(widget.srcPath), fit: BoxFit.fill),
+                          ),
+                          if (isTap) ...[
+                            if (_cPoint != null)
+                              Positioned(
+                                left: _cPoint!.dx * dw - 13,
+                                top: _cPoint!.dy * dh - 13,
+                                width: 26,
+                                height: 26,
+                                child: _marker('C'),
+                              ),
+                            if (_tPoint != null)
+                              Positioned(
+                                left: _tPoint!.dx * dw - 13,
+                                top: _tPoint!.dy * dh - 13,
+                                width: 26,
+                                height: 26,
+                                child: _marker('T'),
+                              ),
+                          ] else
                             _CropOverlay(
                               crop: _crop!,
                               bounds: Size(dw, dh),
                               onChanged: (r) => setState(() => _crop = r),
                             ),
-                          ],
-                        ),
+                        ],
+                      ),
+                    );
+
+                    return Center(
+                      child: InteractiveViewer(
+                        maxScale: 6,
+                        panEnabled: isTap, // 크롭 모드는 박스 드래그 위해 팬 끔
+                        child: isTap
+                            ? GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapUp: (d) => _onTap(d.localPosition),
+                                child: imageLayer,
+                              )
+                            : imageLayer,
                       ),
                     );
                   }),
                 ),
+                if (isTap && (_cPoint != null || _tPoint != null))
+                  TextButton.icon(
+                    onPressed: () =>
+                        setState(() { _cPoint = null; _tPoint = null; }),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('다시 찍기'),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _busy ? null : _analyze,
+                      onPressed: (_busy || !canAnalyze) ? null : _analyze,
                       icon: _busy
                           ? const SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.search),
-                      label: Text(_busy ? '분석 중...' : '이 영역 분석'),
+                      label: Text(_busy
+                          ? '분석 중...'
+                          : (isTap && !canAnalyze ? 'C·T선을 탭하세요' : '분석')),
                     ),
                   ),
                 ),
