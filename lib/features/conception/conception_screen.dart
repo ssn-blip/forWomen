@@ -12,6 +12,7 @@ import '../../core/utils/date_calc.dart';
 import 'add_bbt_sheet.dart';
 import 'add_test_sheet.dart';
 import 'conception_providers.dart';
+import 'test_guide_sheet.dart';
 
 class ConceptionScreen extends ConsumerWidget {
   const ConceptionScreen({super.key});
@@ -41,12 +42,19 @@ class ConceptionScreen extends ConsumerWidget {
   }
 }
 
-// ─── 테스트 탭 (임테기/배란테스트) ────────────────────────────────────────
-class _TestTab extends ConsumerWidget {
+// ─── 테스트 탭 (임신테스트/배란테스트) ────────────────────────────────────
+class _TestTab extends ConsumerStatefulWidget {
   const _TestTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TestTab> createState() => _TestTabState();
+}
+
+class _TestTabState extends ConsumerState<_TestTab> {
+  String _filter = 'all'; // 'all' | 'pregnancy' | 'ovulation'
+
+  @override
+  Widget build(BuildContext context) {
     final logsAsync = ref.watch(testLogsProvider);
 
     return Scaffold(
@@ -59,16 +67,38 @@ class _TestTab extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
         data: (logs) {
-          if (logs.isEmpty) {
-            return const _EmptyHint(
-              icon: Icons.science,
-              text: '임신테스트·배란테스트 결과를\n사진과 함께 기록해 보세요',
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
-            itemCount: logs.length,
-            itemBuilder: (context, i) => _TestTile(log: logs[i]),
+          final filtered = _filter == 'all'
+              ? logs
+              : logs.where((l) => l.kind == _filter).toList();
+          return Column(
+            children: [
+              // 전체/임신/배란 필터
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'all', label: Text('전체')),
+                    ButtonSegment(value: 'pregnancy', label: Text('임신테스트')),
+                    ButtonSegment(value: 'ovulation', label: Text('배란테스트')),
+                  ],
+                  selected: {_filter},
+                  onSelectionChanged: (s) => setState(() => _filter = s.first),
+                  showSelectedIcon: false,
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? const _EmptyHint(
+                        icon: Icons.science,
+                        text: '아직 기록이 없어요.\n+ 버튼으로 결과를 사진과 함께 기록해 보세요',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, i) => _TestTile(log: filtered[i]),
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -76,6 +106,9 @@ class _TestTab extends ConsumerWidget {
   }
 
   void _chooseKind(BuildContext context) {
+    void start(String kind) => TestGuideSheet.show(context,
+        kind: kind, onStart: () => AddTestSheet.show(context, kind: kind));
+
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -87,7 +120,7 @@ class _TestTab extends ConsumerWidget {
               title: const Text('임신테스트'),
               onTap: () {
                 Navigator.pop(context);
-                AddTestSheet.show(context, kind: 'pregnancy');
+                start('pregnancy');
               },
             ),
             ListTile(
@@ -95,7 +128,7 @@ class _TestTab extends ConsumerWidget {
               title: const Text('배란테스트'),
               onTap: () {
                 Navigator.pop(context);
-                AddTestSheet.show(context, kind: 'ovulation');
+                start('ovulation');
               },
             ),
           ],
