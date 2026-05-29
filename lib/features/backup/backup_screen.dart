@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -26,8 +27,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       final dir = await getTemporaryDirectory();
       final file = File(p.join(dir.path, 'momcare_backup.json'));
       await file.writeAsString(json);
-      await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], subject: '맘케어 데이터 백업'),
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: '맘케어 데이터 백업',
       );
     } catch (e) {
       _snack('내보내기 실패: $e');
@@ -37,50 +39,40 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _import() async {
-    final ctrl = TextEditingController();
-    final text = await showDialog<String>(
+    final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('백업 가져오기'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('백업 JSON 내용을 붙여넣으세요.',
-                style: TextStyle(fontSize: 13)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: ctrl,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                hintText: '{ "app": "momcare", ... }',
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text('⚠️ 현재 데이터는 백업 내용으로 대체됩니다.',
-                style: TextStyle(fontSize: 12, color: Colors.red)),
-          ],
-        ),
+        content: const Text('백업 JSON 파일을 선택해 복원합니다.\n'
+            '⚠️ 현재 데이터는 백업 내용으로 대체됩니다.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('취소'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('복원'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('파일 선택'),
           ),
         ],
       ),
     );
-    if (text == null || text.trim().isEmpty) return;
+    if (ok != true) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    final path = result?.files.singleOrNull?.path;
+    if (path == null) return;
 
     setState(() => _busy = true);
     try {
-      await ref.read(backupServiceProvider).importJson(text.trim());
+      final content = await File(path).readAsString();
+      await ref.read(backupServiceProvider).importJson(content);
       _snack('복원이 완료됐어요. 일부 화면은 다시 들어가면 반영됩니다.');
     } catch (e) {
-      _snack('가져오기 실패: 형식을 확인해 주세요.');
+      _snack('가져오기 실패: 올바른 맘케어 백업 파일인지 확인해 주세요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

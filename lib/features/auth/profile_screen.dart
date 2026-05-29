@@ -57,6 +57,11 @@ class ProfileScreen extends ConsumerWidget {
             onTap: () => context.go('/reminders'),
           ),
           _SectionTile(
+            icon: Icons.insights,
+            title: '기록 통계',
+            onTap: () => context.push('/stats'),
+          ),
+          _SectionTile(
             icon: Icons.cloud_sync,
             title: '백업·동기화',
             onTap: () => context.push('/backup'),

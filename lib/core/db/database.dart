@@ -301,19 +301,32 @@ class AppDatabase extends _$AppDatabase {
       (delete(testLogs)..where((t) => t.id.equals(id))).go();
 
   // ── 임신 ────────────────────────────────────────────────────────────
-  Future<Pregnancy?> activePregnancy() =>
-      (select(pregnancies)..where((t) => t.status.equals('active')))
-          .getSingleOrNull();
+  // 활성 임신이 2개 이상이어도 안전하도록 최신 1건만 가져온다.
+  Future<Pregnancy?> activePregnancy() => (select(pregnancies)
+        ..where((t) => t.status.equals('active'))
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+        ..limit(1))
+      .getSingleOrNull();
 
-  Stream<Pregnancy?> watchActivePregnancy() =>
-      (select(pregnancies)..where((t) => t.status.equals('active')))
-          .watchSingleOrNull();
+  Stream<Pregnancy?> watchActivePregnancy() => (select(pregnancies)
+        ..where((t) => t.status.equals('active'))
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+        ..limit(1))
+      .watchSingleOrNull();
 
   Future<int> insertPregnancy(PregnanciesCompanion entry) =>
       into(pregnancies).insert(entry);
 
   Future<bool> updatePregnancy(Pregnancy entry) =>
       update(pregnancies).replace(entry);
+
+  /// 진행 중인 모든 임신을 종료 처리(중복 활성 방지).
+  Future<int> endActivePregnancies() => (update(pregnancies)
+        ..where((t) => t.status.equals('active')))
+      .write(const PregnanciesCompanion(status: Value('ended')));
+
+  Future<int> deletePregnancy(int id) =>
+      (delete(pregnancies)..where((t) => t.id.equals(id))).go();
 
   // ── 알림 ────────────────────────────────────────────────────────────
   Stream<List<Reminder>> watchReminders() =>

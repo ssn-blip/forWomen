@@ -50,7 +50,18 @@ dependencies:
   uuid: ^4.5.3
   flutter_localizations:
     sdk: flutter
-  share_plus: ^13.1.0
+  # share_plus 10.x는 win32 ^5 사용 → file_picker(win32 ^5.9)와 충돌 없음.
+  share_plus: ^10.1.4
+  file_picker: ^8.3.7
+
+# 앱 아이콘 (핑크 그라데이션 + 흰 하트)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#F48FB1"
+  adaptive_icon_foreground: "assets/icon/icon_fg.png"
+  remove_alpha_ios: true
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +75,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.33.0
   build_runner: ^2.15.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

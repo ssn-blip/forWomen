@@ -21,12 +21,46 @@ class PregnancyScreen extends ConsumerWidget {
     final pregAsync = ref.watch(activePregnancyProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('임신')),
+      appBar: AppBar(
+        title: const Text('임신'),
+        actions: [
+          if (pregAsync.value != null)
+            IconButton(
+              tooltip: '임신 기록 삭제',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _confirmDelete(context, ref, pregAsync.value!),
+            ),
+        ],
+      ),
       body: pregAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
         data: (preg) =>
             preg == null ? const _NoPregnancy() : _PregnancyDashboard(preg: preg),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref, Pregnancy preg) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('임신 기록 삭제'),
+        content: const Text('현재 임신 기록을 삭제할까요?\n(잘못 등록했거나 종료된 경우)'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(databaseProvider).deletePregnancy(preg.id);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade400),
+            child: const Text('삭제'),
+          ),
+        ],
       ),
     );
   }

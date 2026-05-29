@@ -14,6 +14,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/info/info_screen.dart';
 import '../../features/pregnancy/pregnancy_screen.dart';
 import '../../features/reminders/reminders_screen.dart';
+import '../../features/stats/stats_screen.dart';
 import 'main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -63,6 +64,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/backup',
         builder: (context, state) => const BackupScreen(),
+      ),
+      GoRoute(
+        path: '/stats',
+        builder: (context, state) => const StatsScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

@@ -28,7 +28,10 @@ class _State extends ConsumerState<RegisterPregnancySheet> {
   DateTime? _dueOverride;
 
   Future<void> _save() async {
-    await ref.read(databaseProvider).insertPregnancy(PregnanciesCompanion(
+    final db = ref.read(databaseProvider);
+    // 중복 활성 임신 방지: 기존 진행 중 임신을 먼저 종료.
+    await db.endActivePregnancies();
+    await db.insertPregnancy(PregnanciesCompanion(
           lastPeriodStart: Value(_lmp),
           dueDateOverride: Value(_dueOverride),
           status: const Value('active'),
