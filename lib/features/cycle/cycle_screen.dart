@@ -14,6 +14,9 @@ import 'cycle_settings.dart';
 import 'cycle_settings_dialog.dart';
 import 'day_event_types.dart';
 import 'pill_settings_dialog.dart';
+import 'quick_record_sheet.dart';
+import 'symptom_catalog.dart';
+import 'symptom_picker_screen.dart';
 
 enum _DayType { none, period, predictedPeriod, ovulation, fertile }
 
@@ -62,62 +65,6 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
         _DayType.none => null,
       };
 
-  /// 기록 종류 선택 메뉴.
-  void _showRecordMenu() {
-    final initial = _selectedDay ?? DateTime.now();
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('어떤 기록을 추가할까요?',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: AppTheme.period,
-                child: Icon(Icons.water_drop, color: Colors.white, size: 20),
-              ),
-              title: const Text('생리 기록'),
-              onTap: () {
-                Navigator.pop(context);
-                AddCycleSheet.show(context, initialDate: _selectedDay);
-              },
-            ),
-            ...kEventTypes.values.map((meta) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: meta.color,
-                    child: Icon(meta.icon, color: Colors.white, size: 20),
-                  ),
-                  title: Text('${meta.label} 기록'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    AddEventSheet.show(context,
-                        type: meta.key, initialDate: initial);
-                  },
-                )),
-            // 피임약 (자동 계산 + 1정 추가 통합)
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: pillMeta.color,
-                child: Icon(pillMeta.icon, color: Colors.white, size: 20),
-              ),
-              title: const Text('피임약'),
-              onTap: () {
-                Navigator.pop(context);
-                PillSettingsDialog.show(context, initialDate: initial);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(cycleLogsProvider);
@@ -146,7 +93,8 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showRecordMenu,
+        onPressed: () => QuickRecordSheet.show(
+            context, _selectedDay ?? DateTime.now()),
         child: const Icon(Icons.add),
       ),
       body: logsAsync.when(
@@ -493,7 +441,15 @@ class _SelectedDayRecords extends ConsumerWidget {
     final pillSeq = ref.watch(pillSequenceProvider);
     final periodLog = _periodLogFor();
     final headerFmt = DateFormat('M월 d일 (E)', 'ko');
-    final hasAny = periodLog != null || events.isNotEmpty;
+
+    // 이 날짜의 증상 태그(있으면).
+    final allSymptoms = ref.watch(daySymptomsProvider).value ?? const [];
+    final daySym = allSymptoms
+        .where((s) => DateCalc.dateOnly(s.date) == DateCalc.dateOnly(day))
+        .cast<DaySymptom?>()
+        .firstOrNull;
+    final hasAny =
+        periodLog != null || events.isNotEmpty || daySym != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,6 +491,23 @@ class _SelectedDayRecords extends ConsumerWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => db.deleteCycleLog(periodLog.id),
+              ),
+            ),
+          ),
+        // 증상 기록 (칩 선택) — 탭하면 수정, 휴지통으로 삭제
+        if (daySym != null)
+          Card(
+            child: ListTile(
+              onTap: () => SymptomPickerScreen.show(context, day),
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFEF9A9A),
+                child: Icon(Icons.healing, color: Colors.white, size: 20),
+              ),
+              title: const Text('증상'),
+              subtitle: Text(parseSymptoms(daySym.symptoms).join(', ')),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => db.deleteDaySymptom(daySym.id),
               ),
             ),
           ),

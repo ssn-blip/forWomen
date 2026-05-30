@@ -6317,6 +6317,348 @@ class DayEventsCompanion extends UpdateCompanion<DayEvent> {
   }
 }
 
+class $DaySymptomsTable extends DaySymptoms
+    with TableInfo<$DaySymptomsTable, DaySymptom> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DaySymptomsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _symptomsMeta = const VerificationMeta(
+    'symptoms',
+  );
+  @override
+  late final GeneratedColumn<String> symptoms = GeneratedColumn<String>(
+    'symptoms',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, symptoms, note, synced];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_symptoms';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DaySymptom> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('symptoms')) {
+      context.handle(
+        _symptomsMeta,
+        symptoms.isAcceptableOrUnknown(data['symptoms']!, _symptomsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_symptomsMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DaySymptom map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DaySymptom(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      symptoms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}symptoms'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
+    );
+  }
+
+  @override
+  $DaySymptomsTable createAlias(String alias) {
+    return $DaySymptomsTable(attachedDatabase, alias);
+  }
+}
+
+class DaySymptom extends DataClass implements Insertable<DaySymptom> {
+  final int id;
+  final DateTime date;
+
+  /// 쉼표 구분 증상 태그
+  final String symptoms;
+  final String? note;
+  final bool synced;
+  const DaySymptom({
+    required this.id,
+    required this.date,
+    required this.symptoms,
+    this.note,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['symptoms'] = Variable<String>(symptoms);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  DaySymptomsCompanion toCompanion(bool nullToAbsent) {
+    return DaySymptomsCompanion(
+      id: Value(id),
+      date: Value(date),
+      symptoms: Value(symptoms),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      synced: Value(synced),
+    );
+  }
+
+  factory DaySymptom.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DaySymptom(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      symptoms: serializer.fromJson<String>(json['symptoms']),
+      note: serializer.fromJson<String?>(json['note']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'symptoms': serializer.toJson<String>(symptoms),
+      'note': serializer.toJson<String?>(note),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  DaySymptom copyWith({
+    int? id,
+    DateTime? date,
+    String? symptoms,
+    Value<String?> note = const Value.absent(),
+    bool? synced,
+  }) => DaySymptom(
+    id: id ?? this.id,
+    date: date ?? this.date,
+    symptoms: symptoms ?? this.symptoms,
+    note: note.present ? note.value : this.note,
+    synced: synced ?? this.synced,
+  );
+  DaySymptom copyWithCompanion(DaySymptomsCompanion data) {
+    return DaySymptom(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      symptoms: data.symptoms.present ? data.symptoms.value : this.symptoms,
+      note: data.note.present ? data.note.value : this.note,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DaySymptom(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('symptoms: $symptoms, ')
+          ..write('note: $note, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, date, symptoms, note, synced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DaySymptom &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.symptoms == this.symptoms &&
+          other.note == this.note &&
+          other.synced == this.synced);
+}
+
+class DaySymptomsCompanion extends UpdateCompanion<DaySymptom> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String> symptoms;
+  final Value<String?> note;
+  final Value<bool> synced;
+  const DaySymptomsCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.symptoms = const Value.absent(),
+    this.note = const Value.absent(),
+    this.synced = const Value.absent(),
+  });
+  DaySymptomsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required String symptoms,
+    this.note = const Value.absent(),
+    this.synced = const Value.absent(),
+  }) : date = Value(date),
+       symptoms = Value(symptoms);
+  static Insertable<DaySymptom> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? symptoms,
+    Expression<String>? note,
+    Expression<bool>? synced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (symptoms != null) 'symptoms': symptoms,
+      if (note != null) 'note': note,
+      if (synced != null) 'synced': synced,
+    });
+  }
+
+  DaySymptomsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? date,
+    Value<String>? symptoms,
+    Value<String?>? note,
+    Value<bool>? synced,
+  }) {
+    return DaySymptomsCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      symptoms: symptoms ?? this.symptoms,
+      note: note ?? this.note,
+      synced: synced ?? this.synced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (symptoms.present) {
+      map['symptoms'] = Variable<String>(symptoms.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DaySymptomsCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('symptoms: $symptoms, ')
+          ..write('note: $note, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6338,6 +6680,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $VaccinationRecordsTable(this);
   late final $BabyPhotosTable babyPhotos = $BabyPhotosTable(this);
   late final $DayEventsTable dayEvents = $DayEventsTable(this);
+  late final $DaySymptomsTable daySymptoms = $DaySymptomsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6358,6 +6701,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vaccinationRecords,
     babyPhotos,
     dayEvents,
+    daySymptoms,
   ];
 }
 
@@ -9697,6 +10041,200 @@ typedef $$DayEventsTableProcessedTableManager =
       DayEvent,
       PrefetchHooks Function()
     >;
+typedef $$DaySymptomsTableCreateCompanionBuilder =
+    DaySymptomsCompanion Function({
+      Value<int> id,
+      required DateTime date,
+      required String symptoms,
+      Value<String?> note,
+      Value<bool> synced,
+    });
+typedef $$DaySymptomsTableUpdateCompanionBuilder =
+    DaySymptomsCompanion Function({
+      Value<int> id,
+      Value<DateTime> date,
+      Value<String> symptoms,
+      Value<String?> note,
+      Value<bool> synced,
+    });
+
+class $$DaySymptomsTableFilterComposer
+    extends Composer<_$AppDatabase, $DaySymptomsTable> {
+  $$DaySymptomsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get symptoms => $composableBuilder(
+    column: $table.symptoms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DaySymptomsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DaySymptomsTable> {
+  $$DaySymptomsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get symptoms => $composableBuilder(
+    column: $table.symptoms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DaySymptomsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DaySymptomsTable> {
+  $$DaySymptomsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get symptoms =>
+      $composableBuilder(column: $table.symptoms, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$DaySymptomsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DaySymptomsTable,
+          DaySymptom,
+          $$DaySymptomsTableFilterComposer,
+          $$DaySymptomsTableOrderingComposer,
+          $$DaySymptomsTableAnnotationComposer,
+          $$DaySymptomsTableCreateCompanionBuilder,
+          $$DaySymptomsTableUpdateCompanionBuilder,
+          (
+            DaySymptom,
+            BaseReferences<_$AppDatabase, $DaySymptomsTable, DaySymptom>,
+          ),
+          DaySymptom,
+          PrefetchHooks Function()
+        > {
+  $$DaySymptomsTableTableManager(_$AppDatabase db, $DaySymptomsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DaySymptomsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DaySymptomsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DaySymptomsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<String> symptoms = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => DaySymptomsCompanion(
+                id: id,
+                date: date,
+                symptoms: symptoms,
+                note: note,
+                synced: synced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime date,
+                required String symptoms,
+                Value<String?> note = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => DaySymptomsCompanion.insert(
+                id: id,
+                date: date,
+                symptoms: symptoms,
+                note: note,
+                synced: synced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DaySymptomsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DaySymptomsTable,
+      DaySymptom,
+      $$DaySymptomsTableFilterComposer,
+      $$DaySymptomsTableOrderingComposer,
+      $$DaySymptomsTableAnnotationComposer,
+      $$DaySymptomsTableCreateCompanionBuilder,
+      $$DaySymptomsTableUpdateCompanionBuilder,
+      (
+        DaySymptom,
+        BaseReferences<_$AppDatabase, $DaySymptomsTable, DaySymptom>,
+      ),
+      DaySymptom,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9731,4 +10269,6 @@ class $AppDatabaseManager {
       $$BabyPhotosTableTableManager(_db, _db.babyPhotos);
   $$DayEventsTableTableManager get dayEvents =>
       $$DayEventsTableTableManager(_db, _db.dayEvents);
+  $$DaySymptomsTableTableManager get daySymptoms =>
+      $$DaySymptomsTableTableManager(_db, _db.daySymptoms);
 }

@@ -26,6 +26,12 @@ final diapersProvider =
   return ref.watch(databaseProvider).watchDiapers(babyId);
 });
 
+/// 모든 아기의 예방접종 완료 기록(모아보기용, 최신순).
+final allVaccinationsProvider =
+    StreamProvider<List<VaccinationRecord>>((ref) {
+  return ref.watch(databaseProvider).watchAllVaccinations();
+});
+
 /// 특정 아기의 성장 사진(메모 포함).
 final babyPhotosProvider =
     StreamProvider.family<List<BabyPhoto>, int>((ref, babyId) {

@@ -221,6 +221,18 @@ class DayEvents extends Table {
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 }
 
+/// 주기 화면의 날짜별 증상 태그 (칩 선택). 임신 중 SymptomLogs와 별개로
+/// 생리/배란 주기 트래킹용 증상을 날짜 1건으로 관리한다.
+class DaySymptoms extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+
+  /// 쉼표 구분 증상 태그
+  TextColumn get symptoms => text()();
+  TextColumn get note => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // 데이터베이스
 // ─────────────────────────────────────────────────────────────────────────
@@ -241,6 +253,7 @@ class DayEvents extends Table {
   VaccinationRecords,
   BabyPhotos,
   DayEvents,
+  DaySymptoms,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -249,7 +262,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -281,6 +294,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 8) {
             await m.createTable(babyPhotos);
+          }
+          if (from < 9) {
+            await m.createTable(daySymptoms);
           }
         },
       );
@@ -516,6 +532,47 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) =>
                 t.type.equals(type) & t.date.isBetweenValues(start, end)))
           .go();
+
+  // ── 날짜별 증상 태그(주기 칩 선택) ─────────────────────────────────────
+  Stream<List<DaySymptom>> watchDaySymptoms() =>
+      (select(daySymptoms)..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          .watch();
+
+  /// 특정 날짜의 증상 기록 1건(없으면 null).
+  Future<DaySymptom?> getDaySymptom(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return (select(daySymptoms)
+          ..where((t) => t.date.isBetweenValues(start, end))
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// 날짜의 증상을 저장(빈 값이면 삭제). 기존 1건을 갱신, 없으면 추가.
+  Future<void> setDaySymptoms(DateTime day, String csv, {String? note}) async {
+    final existing = await getDaySymptom(day);
+    if (csv.trim().isEmpty) {
+      if (existing != null) await deleteDaySymptom(existing.id);
+      return;
+    }
+    if (existing != null) {
+      await (update(daySymptoms)..where((t) => t.id.equals(existing.id)))
+          .write(DaySymptomsCompanion(
+              symptoms: Value(csv), note: Value(note)));
+    } else {
+      await into(daySymptoms).insert(DaySymptomsCompanion(
+          date: Value(day), symptoms: Value(csv), note: Value(note)));
+    }
+  }
+
+  Future<int> deleteDaySymptom(int id) =>
+      (delete(daySymptoms)..where((t) => t.id.equals(id))).go();
+
+  // ── 예방접종 전체(모아보기용) ──────────────────────────────────────────
+  Stream<List<VaccinationRecord>> watchAllVaccinations() =>
+      (select(vaccinationRecords)
+            ..orderBy([(t) => OrderingTerm.desc(t.doneDate)]))
+          .watch();
 }
 
 LazyDatabase _openConnection() {

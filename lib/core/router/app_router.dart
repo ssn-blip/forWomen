@@ -13,6 +13,7 @@ import '../../features/diary/ultrasound_gallery_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/info/info_screen.dart';
 import '../../features/pregnancy/pregnancy_screen.dart';
+import '../../features/records/records_screen.dart';
 import '../../features/reminders/reminders_screen.dart';
 import '../../features/stats/stats_screen.dart';
 import 'main_shell.dart';
@@ -68,6 +69,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/stats',
         builder: (context, state) => const StatsScreen(),
+      ),
+      GoRoute(
+        path: '/records',
+        builder: (context, state) => const RecordsScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
