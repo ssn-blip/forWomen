@@ -54,7 +54,6 @@ class _TestTab extends ConsumerStatefulWidget {
 
 class _TestTabState extends ConsumerState<_TestTab> {
   String _filter = 'all'; // 'all' | 'pregnancy' | 'ovulation'
-  bool _menuOpen = false; // 테스트 종류 드롭다운 펼침 여부
 
   @override
   Widget build(BuildContext context) {
@@ -72,58 +71,45 @@ class _TestTabState extends ConsumerState<_TestTab> {
             children: [
               Column(
             children: [
-              // 필터: [전체 | 임신테스트 ▾] — 테스트를 누르면 아래로 종류 드롭다운.
+              // 필터: [전체] [임신테스트 ▾]. 임신테스트 버튼 바로 아래로 종류 메뉴가 펼쳐진다.
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                child: SegmentedButton<String>(
-                  showSelectedIcon: false,
-                  segments: [
-                    const ButtonSegment(value: 'all', label: Text('전체')),
-                    ButtonSegment(
-                      value: 'test',
-                      label: Text(
-                          '${_filter == 'ovulation' ? '배란테스트' : '임신테스트'} ▾'),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _FilterChip(
+                      label: '전체',
+                      selected: _filter == 'all',
+                      onTap: () => setState(() => _filter = 'all'),
                     ),
-                  ],
-                  selected: {_filter == 'all' ? 'all' : 'test'},
-                  onSelectionChanged: (s) => setState(() {
-                    if (s.first == 'all') {
-                      _filter = 'all';
-                      _menuOpen = false;
-                    } else {
-                      _menuOpen = !_menuOpen;
-                    }
-                  }),
-                ),
-              ),
-              // 테스트 종류 드롭다운 (임신테스트/배란테스트)
-              if (_menuOpen)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    child: Column(
-                      children: [
+                    const SizedBox(width: 8),
+                    MenuAnchor(
+                      builder: (context, controller, _) => _FilterChip(
+                        label:
+                            '${_filter == 'ovulation' ? '배란테스트' : '임신테스트'} ▾',
+                        selected: _filter != 'all',
+                        onTap: () => controller.isOpen
+                            ? controller.close()
+                            : controller.open(),
+                      ),
+                      menuChildren: [
                         for (final opt in const [
                           ('pregnancy', '임신테스트'),
                           ('ovulation', '배란테스트'),
                         ])
-                          ListTile(
-                            dense: true,
-                            title: Text(opt.$2),
-                            trailing: _filter == opt.$1
+                          MenuItemButton(
+                            trailingIcon: _filter == opt.$1
                                 ? const Icon(Icons.check,
-                                    color: AppTheme.primary, size: 20)
+                                    color: AppTheme.primary, size: 18)
                                 : null,
-                            onTap: () => setState(() {
-                              _filter = opt.$1;
-                              _menuOpen = false;
-                            }),
+                            onPressed: () => setState(() => _filter = opt.$1),
+                            child: Text(opt.$2),
                           ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
+              ),
               if (filtered.any((l) => (l.ratio ?? 0) > 0)) const _ScoreLegend(),
               Expanded(
                 child: filtered.isEmpty
@@ -194,6 +180,36 @@ class _TestTabState extends ConsumerState<_TestTab> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 필터용 알약 칩 (선택 시 핑크+흰 글씨).
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      showCheckmark: false,
+      selectedColor: AppTheme.primary,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : Colors.grey.shade700,
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide(
+          color: selected ? AppTheme.primary : Colors.grey.shade300),
     );
   }
 }
