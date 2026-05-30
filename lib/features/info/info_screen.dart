@@ -16,7 +16,11 @@ class InfoScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('정보'),
+          title: Row(mainAxisSize: MainAxisSize.min, children: const [
+            Icon(Icons.info_outline, size: 22),
+            SizedBox(width: 8),
+            Text('정보'),
+          ]),
           bottom: const TabBar(
             tabs: [
               Tab(text: '임신준비'),

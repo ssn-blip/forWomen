@@ -120,7 +120,8 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(cycleLogsProvider);
     final pred = ref.watch(cyclePredictionProvider);
-    final periodLength = ref.watch(cycleSettingsProvider).periodLength;
+    final settings = ref.watch(cycleSettingsProvider);
+    final periodLength = settings.periodLength;
     final events = ref.watch(dayEventsProvider).value ?? const [];
     final pillSeq = ref.watch(pillSequenceProvider);
 
@@ -169,6 +170,9 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
                         lastDay: DateTime(2100),
                         focusedDay: _focusedDay,
                         rowHeight: 56,
+                        startingDayOfWeek: settings.weekStartsMonday
+                            ? StartingDayOfWeek.monday
+                            : StartingDayOfWeek.sunday,
                         selectedDayPredicate: (d) => isSameDay(d, _selectedDay),
                         onDaySelected: (selected, focused) {
                           // 날짜 탭 → 선택 표시. 패널은 그 날짜로 자동 갱신된다.

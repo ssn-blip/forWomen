@@ -22,6 +22,7 @@ class _State extends ConsumerState<CycleSettingsDialog> {
   late int _cycle;
   late int _period;
   late bool _autoLearn;
+  late bool _weekStartsMonday;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _State extends ConsumerState<CycleSettingsDialog> {
     _cycle = s.avgCycleLength;
     _period = s.periodLength;
     _autoLearn = s.autoLearn;
+    _weekStartsMonday = s.weekStartsMonday;
   }
 
   @override
@@ -78,6 +80,23 @@ class _State extends ConsumerState<CycleSettingsDialog> {
                 : '입력하신 주기로 배란·가임기·다음 생리를 계산합니다.',
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
+          const Divider(height: 20),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text('달력 주 시작 요일',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: false, label: Text('일요일')),
+              ButtonSegment(value: true, label: Text('월요일')),
+            ],
+            selected: {_weekStartsMonday},
+            onSelectionChanged: (s) =>
+                setState(() => _weekStartsMonday = s.first),
+          ),
         ],
       ),
       actions: [
@@ -91,6 +110,7 @@ class _State extends ConsumerState<CycleSettingsDialog> {
                   avgCycleLength: _cycle,
                   periodLength: _period,
                   autoLearn: _autoLearn,
+                  weekStartsMonday: _weekStartsMonday,
                 );
             if (context.mounted) Navigator.pop(context);
           },

@@ -25,7 +25,11 @@ class ConceptionScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('임신 준비'),
+          title: Row(mainAxisSize: MainAxisSize.min, children: const [
+            Icon(Icons.science, size: 22),
+            SizedBox(width: 8),
+            Text('임신 준비'),
+          ]),
           bottom: const TabBar(
             tabs: [
               Tab(text: '테스트'),

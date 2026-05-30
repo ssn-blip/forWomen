@@ -23,7 +23,13 @@ class BabyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final baby = ref.watch(activeBabyProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('육아')),
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: const [
+          Icon(Icons.child_care, size: 22),
+          SizedBox(width: 8),
+          Text('육아'),
+        ]),
+      ),
       body: baby == null
           ? const _NoBaby()
           : _BabyDashboard(baby: baby),

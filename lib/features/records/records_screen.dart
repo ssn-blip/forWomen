@@ -60,7 +60,11 @@ class RecordsScreen extends ConsumerWidget {
       length: _kRecordCategories.length + 1,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('기록 모아보기'),
+          title: Row(mainAxisSize: MainAxisSize.min, children: const [
+            Icon(Icons.list_alt, size: 22),
+            SizedBox(width: 8),
+            Text('기록 모아보기'),
+          ]),
           bottom: TabBar(
             isScrollable: true,
             tabs: [

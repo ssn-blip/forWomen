@@ -25,7 +25,13 @@ class DiaryScreen extends ConsumerWidget {
     final entriesAsync = ref.watch(allDiaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('일기')),
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: const [
+          Icon(Icons.menu_book, size: 22),
+          SizedBox(width: 8),
+          Text('일기'),
+        ]),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context),
         icon: const Icon(Icons.edit),

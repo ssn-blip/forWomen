@@ -25,7 +25,11 @@ class PregnancyScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('임신'),
+        title: Row(mainAxisSize: MainAxisSize.min, children: const [
+          Icon(Icons.pregnant_woman, size: 22),
+          SizedBox(width: 8),
+          Text('임신'),
+        ]),
         actions: [
           if (pregAsync.value != null)
             IconButton(
