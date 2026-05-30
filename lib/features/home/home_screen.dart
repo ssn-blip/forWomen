@@ -64,9 +64,9 @@ class HomeScreen extends ConsumerWidget {
             childAspectRatio: 0.95,
             children: [
               _QuickAction(
-                icon: Icons.pregnant_woman,
-                label: '임신',
-                onTap: () => context.push('/pregnancy'),
+                icon: Icons.menu_book,
+                label: '일기',
+                onTap: () => context.push('/diary'),
               ),
               _QuickAction(
                 icon: Icons.science,
@@ -74,9 +74,9 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.push('/conception'),
               ),
               _QuickAction(
-                icon: Icons.menu_book,
-                label: '일기',
-                onTap: () => context.push('/diary'),
+                icon: Icons.pregnant_woman,
+                label: '임신',
+                onTap: () => context.push('/pregnancy'),
               ),
               _QuickAction(
                 icon: Icons.photo_library,
