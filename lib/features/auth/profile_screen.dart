@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../cycle/app_mode.dart';
-import '../cycle/cycle_settings_dialog.dart';
 import 'auth_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -49,16 +48,6 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           const _ModeSelector(),
           const SizedBox(height: 8),
-          _SectionTile(
-            icon: Icons.settings,
-            title: '주기 설정 (평균 주기·생리기간)',
-            onTap: () => CycleSettingsDialog.show(context),
-          ),
-          _SectionTile(
-            icon: Icons.notifications,
-            title: '알림 설정',
-            onTap: () => context.go('/reminders'),
-          ),
           _SectionTile(
             icon: Icons.list_alt,
             title: '기록 모아보기 (약 복용·예방접종)',

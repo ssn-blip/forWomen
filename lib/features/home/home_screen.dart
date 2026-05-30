@@ -73,17 +73,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           const _TodaySummary(),
-          const SizedBox(height: 4),
-          _CycleSummaryCard(),
           const _TodayMedsCard(),
-          _SummaryCard(
-            color: AppTheme.accent.withValues(alpha: 0.18),
-            icon: Icons.notifications_active,
-            iconColor: Colors.orange,
-            title: '알림',
-            subtitle: '약 복용·검진 일정을 놓치지 마세요',
-            onTap: () => context.go('/reminders'),
-          ),
           const SizedBox(height: 8),
           Text(
             '바로가기',
@@ -375,82 +365,6 @@ class _TodaySummary extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 주기 추적 진입 카드 — 예측 요약을 동적으로 보여준다.
-class _CycleSummaryCard extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pred = ref.watch(cyclePredictionProvider);
-    final subtitle = pred == null
-        ? '생리를 기록하고 다음 주기를 예측하세요'
-        : '평균 ${pred.cycleLength}일 주기 · 배란 예정 '
-            '${pred.ovulation.month}/${pred.ovulation.day}';
-    return _SummaryCard(
-      color: AppTheme.primary.withValues(alpha: 0.12),
-      icon: Icons.water_drop,
-      iconColor: AppTheme.period,
-      title: '주기 추적',
-      subtitle: subtitle,
-      onTap: () => context.go('/cycle'),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.color,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final Color color;
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: color,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(icon, color: iconColor),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: TextStyle(
-                            color: Colors.grey.shade700, fontSize: 13)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
-        ),
       ),
     );
   }
