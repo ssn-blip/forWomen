@@ -44,7 +44,7 @@ Future<void> main() async {
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: const MomCareApp(),
+      child: const ForWomenApp(),
     ),
   );
 }

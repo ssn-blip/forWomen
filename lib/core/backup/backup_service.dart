@@ -55,7 +55,7 @@ class BackupService {
   Future<void> importJson(String jsonStr) async {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
     if (data['app'] != 'momcare') {
-      throw const FormatException('맘케어 백업 파일이 아닙니다.');
+      throw const FormatException('forWomen 백업 파일이 아닙니다.');
     }
     final tables = (data['tables'] as Map).cast<String, dynamic>();
 

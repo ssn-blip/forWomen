@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final name = user?.displayName ?? '회원';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('맘케어')),
+      appBar: AppBar(title: const Text('forWomen')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [

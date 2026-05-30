@@ -6,14 +6,14 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/reminders/reminders_providers.dart';
 
-class MomCareApp extends ConsumerStatefulWidget {
-  const MomCareApp({super.key});
+class ForWomenApp extends ConsumerStatefulWidget {
+  const ForWomenApp({super.key});
 
   @override
-  ConsumerState<MomCareApp> createState() => _MomCareAppState();
+  ConsumerState<ForWomenApp> createState() => _ForWomenAppState();
 }
 
-class _MomCareAppState extends ConsumerState<MomCareApp>
+class _ForWomenAppState extends ConsumerState<ForWomenApp>
     with WidgetsBindingObserver {
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _MomCareAppState extends ConsumerState<MomCareApp>
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: '맘케어',
+      title: 'forWomen',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,

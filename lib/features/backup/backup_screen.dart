@@ -25,11 +25,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     try {
       final json = await ref.read(backupServiceProvider).exportJson();
       final dir = await getTemporaryDirectory();
-      final file = File(p.join(dir.path, 'momcare_backup.json'));
+      final file = File(p.join(dir.path, 'forwomen_backup.json'));
       await file.writeAsString(json);
       await Share.shareXFiles(
         [XFile(file.path)],
-        subject: '맘케어 데이터 백업',
+        subject: 'forWomen 데이터 백업',
       );
     } catch (e) {
       _snack('내보내기 실패: $e');
@@ -72,7 +72,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await ref.read(backupServiceProvider).importJson(content);
       _snack('복원이 완료됐어요. 일부 화면은 다시 들어가면 반영됩니다.');
     } catch (e) {
-      _snack('가져오기 실패: 올바른 맘케어 백업 파일인지 확인해 주세요.');
+      _snack('가져오기 실패: 올바른 forWomen 백업 파일인지 확인해 주세요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

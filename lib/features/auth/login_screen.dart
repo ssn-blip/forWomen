@@ -22,7 +22,7 @@ class LoginScreen extends ConsumerWidget {
               const _Logo(),
               const SizedBox(height: 16),
               Text(
-                '맘케어',
+                'forWomen',
                 style: Theme.of(context)
                     .textTheme
                     .headlineMedium

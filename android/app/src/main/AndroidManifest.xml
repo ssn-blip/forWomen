@@ -9,7 +9,7 @@
          CAMERA 권한을 직접 선언하지 않는다. (선언 시 런타임 권한 요구로 촬영이 무반응이 됨) -->
 
     <application
-        android:label="맘케어"
+        android:label="forWomen"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
