@@ -9,7 +9,6 @@ import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
-import '../../core/widgets/category_filter_bar.dart';
 import 'add_bbt_sheet.dart';
 import 'add_test_sheet.dart';
 import 'conception_providers.dart';
@@ -72,19 +71,19 @@ class _TestTabState extends ConsumerState<_TestTab> {
             children: [
               Column(
             children: [
-              // 전체 / 테스트(▾ 임신·배란) 필터
-              CategoryFilterBar(
-                groups: const [
-                  CategoryGroup('전체'),
-                  CategoryGroup('테스트', ['임신테스트', '배란테스트']),
-                ],
-                onChanged: (top, sub) => setState(() {
-                  _filter = sub == '임신테스트'
-                      ? 'pregnancy'
-                      : sub == '배란테스트'
-                          ? 'ovulation'
-                          : 'all';
-                }),
+              // 전체/임신/배란 필터
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'all', label: Text('전체')),
+                    ButtonSegment(value: 'pregnancy', label: Text('임신테스트')),
+                    ButtonSegment(value: 'ovulation', label: Text('배란테스트')),
+                  ],
+                  selected: {_filter},
+                  onSelectionChanged: (s) => setState(() => _filter = s.first),
+                  showSelectedIcon: false,
+                ),
               ),
               if (filtered.any((l) => (l.ratio ?? 0) > 0)) const _ScoreLegend(),
               Expanded(
