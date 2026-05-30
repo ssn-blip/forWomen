@@ -117,8 +117,22 @@ class _State extends ConsumerState<TestTimerSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('판독 대기 타이머',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const SizedBox(width: 48), // 우측 X버튼과 대칭(제목 가운데 정렬)
+              const Expanded(
+                child: Text('판독 대기 타이머',
+                    textAlign: TextAlign.center,
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: '닫기',
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
           Text('테스트 설명서의 권장 시간을 맞춰 두세요.',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
