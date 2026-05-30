@@ -38,22 +38,6 @@ class RemindersScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
             children: [
-              // 주기 기반 자동 알림 진입 배너
-              Card(
-                color: AppTheme.primary.withValues(alpha: 0.08),
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: AppTheme.primary,
-                    child: Icon(Icons.event_repeat, color: Colors.white),
-                  ),
-                  title: const Text('주기 알림 설정'),
-                  subtitle:
-                      const Text('생리 예정·배란·가임기·기초체온·체중 측정 알림'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/cycle-alarms'),
-                ),
-              ),
-              const SizedBox(height: 8),
               if (reminders.isEmpty)
                 const Padding(
                   padding: EdgeInsets.only(top: 40),
