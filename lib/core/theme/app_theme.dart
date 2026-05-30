@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  // 브랜드 색상
-  static const Color primary = Color(0xFFF48FB1); // 핑크
-  static const Color secondary = Color(0xFF9FA8DA); // 라벤더
-  static const Color accent = Color(0xFFFFCC80); // 살구
-  static const Color background = Color(0xFFFFF7FA);
+  // 브랜드 색상 (로고: 보라·라벤더 톤)
+  static const Color primary = Color(0xFF8763B6); // 보라
+  static const Color secondary = Color(0xFFB39DDB); // 라벤더
+  static const Color accent = Color(0xFFD1C4E9); // 연보라
+  static const Color background = Color(0xFFF7F4FB); // 연보라빛 화이트
   static const Color surface = Colors.white;
 
   // 의미 색상 (주기 캘린더 등에서 사용)
@@ -47,9 +47,20 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14),
+          elevation: 2,
+          shadowColor: primary.withValues(alpha: 0.4),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          side: BorderSide(color: primary.withValues(alpha: 0.5)),
+          foregroundColor: primary,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

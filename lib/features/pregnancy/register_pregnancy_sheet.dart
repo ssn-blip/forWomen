@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
 import '../../core/widgets/sheet_header.dart';
 
@@ -98,7 +99,7 @@ class _State extends ConsumerState<RegisterPregnancySheet> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.pink.withValues(alpha: 0.08),
+              color: AppTheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text('현재 임신 ${age.week}주 ${age.day}일차로 계산돼요 💕',
