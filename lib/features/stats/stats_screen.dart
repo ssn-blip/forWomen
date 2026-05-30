@@ -9,8 +9,21 @@ import '../conception/conception_providers.dart';
 import '../cycle/cycle_providers.dart';
 import '../cycle/day_event_types.dart';
 
-class StatsScreen extends ConsumerWidget {
+class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('기록 통계')),
+      body: const StatsView(),
+    );
+  }
+}
+
+/// 통계 본문(차트·카운트). 별도 화면과 기록 화면의 '통계' 탭에서 공용.
+class StatsView extends ConsumerWidget {
+  const StatsView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,14 +56,12 @@ class StatsScreen extends ConsumerWidget {
       eventCounts[e.type] = (eventCounts[e.type] ?? 0) + 1;
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('기록 통계')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              _StatBox(
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            _StatBox(
                   label: '평균 주기',
                   value: avgCycle != null ? '$avgCycle일' : '-',
                   icon: Icons.autorenew,
@@ -115,8 +126,7 @@ class StatsScreen extends ConsumerWidget {
           Text('※ 통계는 참고용이며 의료 진단이 아닙니다.',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
         ],
-      ),
-    );
+      );
   }
 }
 
