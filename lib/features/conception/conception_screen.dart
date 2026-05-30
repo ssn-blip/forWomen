@@ -14,6 +14,7 @@ import 'add_test_sheet.dart';
 import 'conception_providers.dart';
 import 'strip_analyzer.dart';
 import 'test_guide_sheet.dart';
+import 'test_timer_sheet.dart';
 
 class ConceptionScreen extends ConsumerWidget {
   const ConceptionScreen({super.key});
@@ -59,10 +60,11 @@ class _TestTabState extends ConsumerState<_TestTab> {
     final logsAsync = ref.watch(testLogsProvider);
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
+      // 오른쪽: 기록 추가(+), 왼쪽: 판독 대기 타이머
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'testAdd',
         onPressed: () => _chooseKind(context),
-        icon: const Icon(Icons.add),
-        label: const Text('테스트 기록'),
+        child: const Icon(Icons.add),
       ),
       body: logsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -71,7 +73,9 @@ class _TestTabState extends ConsumerState<_TestTab> {
           final filtered = _filter == 'all'
               ? logs
               : logs.where((l) => l.kind == _filter).toList();
-          return Column(
+          return Stack(
+            children: [
+              Column(
             children: [
               // 전체/임신/배란 필터
               Padding(
@@ -99,6 +103,18 @@ class _TestTabState extends ConsumerState<_TestTab> {
                         itemCount: filtered.length,
                         itemBuilder: (context, i) => _TestTile(log: filtered[i]),
                       ),
+              ),
+                ],
+              ),
+              // 왼쪽 하단: 판독 대기 타이머
+              Positioned(
+                left: 16,
+                bottom: 16,
+                child: FloatingActionButton(
+                  heroTag: 'testTimer',
+                  onPressed: () => TestTimerSheet.show(context),
+                  child: const Icon(Icons.timer_outlined),
+                ),
               ),
             ],
           );
