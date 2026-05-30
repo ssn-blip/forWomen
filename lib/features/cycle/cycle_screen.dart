@@ -16,8 +16,9 @@ import 'record_panel_settings_screen.dart';
 enum _DayType { none, period, predictedPeriod, ovulation, fertile }
 
 /// 패널이 접혔을 때 / 펼쳐졌을 때 화면 높이 비율.
+/// 1.0이면 본문(앱바 아래) 전체를 채워 헤더 바로 아래까지 올라온다.
 const double _kPanelMin = 0.45;
-const double _kPanelMax = 0.92;
+const double _kPanelMax = 1.0;
 
 class CycleScreen extends ConsumerStatefulWidget {
   const CycleScreen({super.key});
