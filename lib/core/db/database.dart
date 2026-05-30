@@ -434,6 +434,15 @@ class AppDatabase extends _$AppDatabase {
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .watch();
 
+  /// 단일 일기 목록(최신순). 일기 종류(일반·과거 임신/육아일기)만 모으고,
+  /// 메모용 kind(pregnancy_memo·baby_memo)는 제외한다.
+  Stream<List<DiaryEntry>> watchAllDiary() =>
+      (select(diaryEntries)
+            ..where(
+                (t) => t.kind.isIn(const ['general', 'pregnancy', 'parenting']))
+            ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          .watch();
+
   Future<int> insertDiary(DiaryEntriesCompanion entry) =>
       into(diaryEntries).insert(entry);
 

@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 
-/// 종류별 일기 목록 (최신순). family로 'pregnancy'/'parenting' 구분.
+/// 종류별 일기/메모 목록 (최신순). family로 kind 구분(메모는 별도 kind 사용).
 final diaryProvider =
     StreamProvider.family<List<DiaryEntry>, String>((ref, kind) {
   return ref.watch(databaseProvider).watchDiary(kind);
+});
+
+/// 단일 일기 목록 (일반·과거 임신/육아일기 통합, 최신순).
+final allDiaryProvider = StreamProvider<List<DiaryEntry>>((ref) {
+  return ref.watch(databaseProvider).watchAllDiary();
 });
 
 /// 초음파 사진 목록 (최신순).

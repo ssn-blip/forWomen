@@ -13,45 +13,20 @@ import 'write_diary_screen.dart';
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('일기'),
-          bottom: const TabBar(
-            tabs: [Tab(text: '임신일기'), Tab(text: '육아일기')],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            _DiaryList(kind: 'pregnancy'),
-            _DiaryList(kind: 'parenting'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DiaryList extends ConsumerWidget {
-  const _DiaryList({required this.kind});
-
-  final String kind;
-
   void _openEditor(BuildContext context, {DiaryEntry? existing}) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => WriteDiaryScreen(kind: kind, existing: existing),
+      builder: (_) =>
+          WriteDiaryScreen(kind: existing?.kind ?? 'general', existing: existing),
     ));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entriesAsync = ref.watch(diaryProvider(kind));
+    final entriesAsync = ref.watch(allDiaryProvider);
     const moodEmoji = ['😢', '😟', '😐', '🙂', '😄'];
 
     return Scaffold(
+      appBar: AppBar(title: const Text('일기')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context),
         icon: const Icon(Icons.edit),
@@ -71,12 +46,8 @@ class _DiaryList extends ConsumerWidget {
                     const Icon(Icons.menu_book,
                         size: 64, color: AppTheme.secondary),
                     const SizedBox(height: 16),
-                    Text(
-                      kind == 'pregnancy'
-                          ? '소중한 임신의 순간을 기록해 보세요'
-                          : '아이와의 하루를 기록해 보세요',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
+                    Text('소중한 오늘의 순간을 기록해 보세요',
+                        style: TextStyle(color: Colors.grey.shade600)),
                   ],
                 ),
               ),

@@ -14,7 +14,7 @@ import 'diary_providers.dart';
 class WriteDiaryScreen extends ConsumerStatefulWidget {
   const WriteDiaryScreen({super.key, required this.kind, this.existing});
 
-  /// 'pregnancy' | 'parenting'
+  /// 일기 종류. 신규는 'general', 과거 글은 'pregnancy'/'parenting'.
   final String kind;
   final DiaryEntry? existing;
 
@@ -88,10 +88,9 @@ class _State extends ConsumerState<WriteDiaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPregnancy = widget.kind == 'pregnancy';
     return Scaffold(
       appBar: AppBar(
-        title: Text(isPregnancy ? '임신일기' : '육아일기'),
+        title: Text(widget.existing == null ? '일기 쓰기' : '일기 수정'),
         actions: [
           TextButton(onPressed: _save, child: const Text('저장')),
         ],
