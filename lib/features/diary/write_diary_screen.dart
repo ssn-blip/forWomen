@@ -7,8 +7,19 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/image_storage.dart';
 import 'diary_providers.dart';
+
+/// 기분 1~5에 대응하는 아이콘·라벨 (일기 작성/목록 공용).
+const List<IconData> kMoodIcons = [
+  Icons.sentiment_very_dissatisfied,
+  Icons.sentiment_dissatisfied,
+  Icons.sentiment_neutral,
+  Icons.sentiment_satisfied,
+  Icons.sentiment_very_satisfied,
+];
+const List<String> kMoodLabels = ['나쁨', '별로', '보통', '좋음', '최고'];
 
 /// 일기 작성/수정 화면.
 class WriteDiaryScreen extends ConsumerStatefulWidget {
@@ -29,8 +40,6 @@ class _State extends ConsumerState<WriteDiaryScreen> {
   int _mood = 4;
   late List<String> _photos;
   final _picker = ImagePicker();
-
-  static const _moodEmoji = ['😢', '😟', '😐', '🙂', '😄'];
 
   @override
   void initState() {
@@ -104,18 +113,38 @@ class _State extends ConsumerState<WriteDiaryScreen> {
             children: List.generate(5, (i) {
               final selected = _mood == i + 1;
               return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _mood = i + 1),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? Colors.pink.withValues(alpha: 0.15)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(_moodEmoji[i],
-                      style: TextStyle(fontSize: selected ? 32 : 24)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppTheme.primary
+                            : Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                        border: selected
+                            ? null
+                            : Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Icon(kMoodIcons[i],
+                          size: 30,
+                          color:
+                              selected ? Colors.white : Colors.grey.shade500),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(kMoodLabels[i],
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: selected ? AppTheme.primary : Colors.grey,
+                            fontWeight: selected
+                                ? FontWeight.bold
+                                : FontWeight.normal)),
+                  ],
                 ),
               );
             }),

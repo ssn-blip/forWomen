@@ -23,7 +23,6 @@ class DiaryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(allDiaryProvider);
-    const moodEmoji = ['😢', '😟', '😐', '🙂', '😄'];
 
     return Scaffold(
       appBar: AppBar(title: const Text('일기')),
@@ -70,11 +69,14 @@ class DiaryScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
+                            Icon(
                               e.mood != null
-                                  ? moodEmoji[(e.mood! - 1).clamp(0, 4)]
-                                  : '📝',
-                              style: const TextStyle(fontSize: 20),
+                                  ? kMoodIcons[(e.mood! - 1).clamp(0, 4)]
+                                  : Icons.notes,
+                              size: 22,
+                              color: e.mood != null
+                                  ? AppTheme.primary
+                                  : Colors.grey.shade400,
                             ),
                             const SizedBox(width: 8),
                             Text(
