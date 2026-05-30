@@ -137,11 +137,15 @@ class _PregnancyDashboard extends ConsumerWidget {
         const SizedBox(height: 16),
         const MemoSection(kind: 'pregnancy_memo'),
         const SizedBox(height: 16),
-        Center(
+        SizedBox(
+          width: double.infinity,
           child: FilledButton.icon(
             onPressed: () => BirthRecordSheet.show(context, pregnancy: preg),
             icon: const Icon(Icons.celebration),
             label: const Text('출산 기록하기'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
           ),
         ),
       ],
