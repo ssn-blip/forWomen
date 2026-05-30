@@ -167,10 +167,9 @@ class _TestFilterBar extends StatefulWidget {
 }
 
 class _TestFilterBarState extends State<_TestFilterBar> {
-  bool _open = false;
-
   static const _opts = [('pregnancy', '임신테스트'), ('ovulation', '배란테스트')];
   static const double _r = 20;
+  static const double _w = 128; // 버튼·드롭다운 공통 너비
 
   @override
   Widget build(BuildContext context) {
@@ -180,96 +179,96 @@ class _TestFilterBarState extends State<_TestFilterBar> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _pill(
           label: '전체',
           selected: widget.value == 'all',
-          onTap: () {
-            setState(() => _open = false);
-            widget.onChanged('all');
-          },
+          onTap: () => widget.onChanged('all'),
         ),
         const SizedBox(width: 8),
-        // 임신테스트 버튼 + 펼침 목록을 한 박스로.
-        IntrinsicWidth(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: borderColor),
+        // 임신테스트 버튼 — 누르면 같은 폭의 메뉴가 아래 내용을 "덮으며" 펼쳐진다(오버레이).
+        MenuAnchor(
+          alignmentOffset: const Offset(0, 0),
+          style: MenuStyle(
+            backgroundColor: const WidgetStatePropertyAll(Colors.white),
+            elevation: const WidgetStatePropertyAll(3),
+            padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+            shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              side: BorderSide(color: borderColor),
+              borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(_r)),
+            )),
+          ),
+          builder: (context, controller, _) {
+            final open = controller.isOpen;
+            return InkWell(
               borderRadius: BorderRadius.circular(_r),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                InkWell(
-                  onTap: () => setState(() => _open = !_open),
-                  child: Container(
-                    color: testSelected ? AppTheme.primary : null,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(testLabel,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: testSelected
-                                    ? Colors.white
-                                    : Colors.grey.shade700,
-                                fontWeight: testSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal)),
-                        Icon(
-                            _open
-                                ? Icons.arrow_drop_up
-                                : Icons.arrow_drop_down,
-                            size: 18,
-                            color: testSelected
-                                ? Colors.white
-                                : Colors.grey.shade600),
-                      ],
-                    ),
+              onTap: () => open ? controller.close() : controller.open(),
+              child: Container(
+                width: _w,
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                decoration: BoxDecoration(
+                  color: testSelected ? AppTheme.primary : Colors.white,
+                  borderRadius: open
+                      ? const BorderRadius.vertical(top: Radius.circular(_r))
+                      : BorderRadius.circular(_r),
+                  border: Border(
+                    top: BorderSide(color: borderColor),
+                    left: BorderSide(color: borderColor),
+                    right: BorderSide(color: borderColor),
+                    bottom: open
+                        ? BorderSide.none
+                        : BorderSide(color: borderColor),
                   ),
                 ),
-                if (_open)
-                  for (final opt in _opts) ...[
-                    Divider(height: 1, color: Colors.grey.shade200),
-                    InkWell(
-                      onTap: () {
-                        setState(() => _open = false);
-                        widget.onChanged(opt.$1);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 9),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(opt.$2,
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: widget.value == opt.$1
-                                          ? AppTheme.primary
-                                          : Colors.grey.shade800,
-                                      fontWeight: widget.value == opt.$1
-                                          ? FontWeight.bold
-                                          : FontWeight.normal)),
-                            ),
-                            if (widget.value == opt.$1)
-                              const Icon(Icons.check,
-                                  size: 15, color: AppTheme.primary),
-                          ],
-                        ),
-                      ),
-                    ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(testLabel,
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: testSelected
+                                ? Colors.white
+                                : Colors.grey.shade700,
+                            fontWeight: testSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal)),
+                    Icon(open ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                        size: 18,
+                        color:
+                            testSelected ? Colors.white : Colors.grey.shade600),
                   ],
-              ],
-            ),
-          ),
+                ),
+              ),
+            );
+          },
+          menuChildren: [
+            for (final opt in _opts)
+              SizedBox(
+                width: _w,
+                child: MenuItemButton(
+                  trailingIcon: widget.value == opt.$1
+                      ? const Icon(Icons.check, size: 16, color: AppTheme.primary)
+                      : null,
+                  style: MenuItemButton.styleFrom(
+                    foregroundColor: widget.value == opt.$1
+                        ? AppTheme.primary
+                        : Colors.grey.shade800,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: () => widget.onChanged(opt.$1),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(opt.$2,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: widget.value == opt.$1
+                                ? FontWeight.bold
+                                : FontWeight.normal)),
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -283,14 +282,15 @@ class _TestFilterBarState extends State<_TestFilterBar> {
     return Material(
       color: selected ? AppTheme.primary : Colors.white,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: selected ? AppTheme.primary : Colors.grey.shade300),
+        side: BorderSide(
+            color: selected ? AppTheme.primary : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(_r),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(label,
               style: TextStyle(
                   fontSize: 13,
