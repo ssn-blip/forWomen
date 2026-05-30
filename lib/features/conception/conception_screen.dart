@@ -71,67 +71,12 @@ class _TestTabState extends ConsumerState<_TestTab> {
             children: [
               Column(
             children: [
-              // 필터: [전체] [임신테스트 ▾]. 임신테스트 버튼 바로 아래로 종류 메뉴가 펼쳐진다.
+              // 필터: [전체] [임신테스트 ▾] — 임신테스트를 누르면 같은 박스가 아래로 펼쳐진다.
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _FilterChip(
-                      label: '전체',
-                      selected: _filter == 'all',
-                      onTap: () => setState(() => _filter = 'all'),
-                    ),
-                    const SizedBox(width: 8),
-                    MenuAnchor(
-                      alignmentOffset: const Offset(0, 4),
-                      style: MenuStyle(
-                        backgroundColor:
-                            const WidgetStatePropertyAll(Colors.white),
-                        elevation: const WidgetStatePropertyAll(4),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(vertical: 4)),
-                      ),
-                      builder: (context, controller, _) => _FilterChip(
-                        label: _filter == 'ovulation' ? '배란테스트' : '임신테스트',
-                        selected: _filter != 'all',
-                        dropdown: true,
-                        onTap: () => controller.isOpen
-                            ? controller.close()
-                            : controller.open(),
-                      ),
-                      menuChildren: [
-                        for (final opt in const [
-                          ('pregnancy', '임신테스트'),
-                          ('ovulation', '배란테스트'),
-                        ])
-                          MenuItemButton(
-                            trailingIcon: _filter == opt.$1
-                                ? const Icon(Icons.check,
-                                    color: AppTheme.primary, size: 18)
-                                : null,
-                            style: MenuItemButton.styleFrom(
-                              foregroundColor: _filter == opt.$1
-                                  ? AppTheme.primary
-                                  : Colors.grey.shade800,
-                            ),
-                            onPressed: () => setState(() => _filter = opt.$1),
-                            child: Text(
-                              opt.$2,
-                              style: TextStyle(
-                                fontWeight: _filter == opt.$1
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                child: _TestFilterBar(
+                  value: _filter,
+                  onChanged: (v) => setState(() => _filter = v),
                 ),
               ),
               if (filtered.any((l) => (l.ratio ?? 0) > 0)) const _ScoreLegend(),
@@ -208,44 +153,151 @@ class _TestTabState extends ConsumerState<_TestTab> {
   }
 }
 
-/// 필터용 알약 칩 (선택 시 핑크+흰 글씨). [dropdown]이면 끝에 ▾ 아이콘.
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.dropdown = false,
-  });
+/// [전체] [임신테스트 ▾] 필터. 임신테스트 칩을 누르면 같은 박스가 아래로
+/// 펼쳐져 임신테스트/배란테스트를 고른다(버튼과 목록이 한 덩어리로 연결됨).
+class _TestFilterBar extends StatefulWidget {
+  const _TestFilterBar({required this.value, required this.onChanged});
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool dropdown;
+  /// 'all' | 'pregnancy' | 'ovulation'
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_TestFilterBar> createState() => _TestFilterBarState();
+}
+
+class _TestFilterBarState extends State<_TestFilterBar> {
+  bool _open = false;
+
+  static const _opts = [('pregnancy', '임신테스트'), ('ovulation', '배란테스트')];
+  static const double _r = 20;
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : Colors.grey.shade700;
-    return ChoiceChip(
-      label: dropdown
-          ? Row(
+    final testSelected = widget.value != 'all';
+    final testLabel = widget.value == 'ovulation' ? '배란테스트' : '임신테스트';
+    final borderColor = testSelected ? AppTheme.primary : Colors.grey.shade300;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _pill(
+          label: '전체',
+          selected: widget.value == 'all',
+          onTap: () {
+            setState(() => _open = false);
+            widget.onChanged('all');
+          },
+        ),
+        const SizedBox(width: 8),
+        // 임신테스트 버튼 + 펼침 목록을 한 박스로.
+        IntrinsicWidth(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.circular(_r),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(label),
-                const SizedBox(width: 2),
-                Icon(Icons.arrow_drop_down, size: 18, color: fg),
+                InkWell(
+                  onTap: () => setState(() => _open = !_open),
+                  child: Container(
+                    color: testSelected ? AppTheme.primary : null,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(testLabel,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: testSelected
+                                    ? Colors.white
+                                    : Colors.grey.shade700,
+                                fontWeight: testSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal)),
+                        Icon(
+                            _open
+                                ? Icons.arrow_drop_up
+                                : Icons.arrow_drop_down,
+                            size: 18,
+                            color: testSelected
+                                ? Colors.white
+                                : Colors.grey.shade600),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_open)
+                  for (final opt in _opts) ...[
+                    Divider(height: 1, color: Colors.grey.shade200),
+                    InkWell(
+                      onTap: () {
+                        setState(() => _open = false);
+                        widget.onChanged(opt.$1);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 9),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(opt.$2,
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: widget.value == opt.$1
+                                          ? AppTheme.primary
+                                          : Colors.grey.shade800,
+                                      fontWeight: widget.value == opt.$1
+                                          ? FontWeight.bold
+                                          : FontWeight.normal)),
+                            ),
+                            if (widget.value == opt.$1)
+                              const Icon(Icons.check,
+                                  size: 15, color: AppTheme.primary),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
               ],
-            )
-          : Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      showCheckmark: false,
-      selectedColor: AppTheme.primary,
-      labelStyle: TextStyle(
-        color: fg,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _pill({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: selected ? AppTheme.primary : Colors.white,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: selected ? AppTheme.primary : Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(_r),
       ),
-      side: BorderSide(
-          color: selected ? AppTheme.primary : Colors.grey.shade300),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: selected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
+        ),
+      ),
     );
   }
 }
