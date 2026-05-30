@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
+/// 세그먼트 선택색을 핑크+흰 글씨로(앱 강조색과 동일하게).
+final ButtonStyle _kSegStyle = ButtonStyle(
+  backgroundColor: WidgetStateProperty.resolveWith(
+    (s) => s.contains(WidgetState.selected) ? AppTheme.primary : null,
+  ),
+  foregroundColor: WidgetStateProperty.resolveWith(
+    (s) => s.contains(WidgetState.selected) ? Colors.white : Colors.grey.shade700,
+  ),
+);
+
 /// 카테고리 한 칸. [subs]가 있으면 선택 시 아래로 세분류가 펼쳐진다.
 class CategoryGroup {
   const CategoryGroup(this.label, [this.subs]);
@@ -46,6 +58,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
           child: SegmentedButton<String>(
             showSelectedIcon: false,
+            style: _kSegStyle,
             segments: [
               for (final g in widget.groups)
                 ButtonSegment(
@@ -70,6 +83,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: SegmentedButton<String>(
               showSelectedIcon: false,
+              style: _kSegStyle,
               segments: [
                 const ButtonSegment(value: _kSubAll, label: Text('전체')),
                 for (final s in subs)
