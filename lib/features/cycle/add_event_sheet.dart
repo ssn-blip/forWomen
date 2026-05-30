@@ -95,6 +95,14 @@ class _State extends ConsumerState<AddEventSheet> {
     if (mounted) Navigator.pop(context);
   }
 
+  Future<void> _delete() async {
+    final e = widget.existing;
+    if (e != null) {
+      await ref.read(databaseProvider).deleteDayEvent(e.id);
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final meta = eventMeta(widget.type)!;
@@ -156,13 +164,28 @@ class _State extends ConsumerState<AddEventSheet> {
             maxLines: 2,
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _save,
-              style: FilledButton.styleFrom(backgroundColor: meta.color),
-              child: const Text('저장'),
-            ),
+          Row(
+            children: [
+              if (_isEditing) ...[
+                OutlinedButton.icon(
+                  onPressed: _delete,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('삭제'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade400,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: FilledButton(
+                  onPressed: _save,
+                  style: FilledButton.styleFrom(backgroundColor: meta.color),
+                  child: Text(_isEditing ? '수정' : '저장'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

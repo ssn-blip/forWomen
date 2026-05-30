@@ -7,6 +7,7 @@ import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
+import '../../core/widgets/sheet_header.dart';
 import '../conception/add_test_sheet.dart';
 import '../conception/conception_providers.dart';
 import 'add_event_sheet.dart';
@@ -193,8 +194,11 @@ class DayRecordList extends ConsumerWidget {
               color: meta.color,
               label: meta.label,
               done: hasEvent(meta.key),
-              onTap: () => AddEventSheet.show(context,
-                  type: meta.key, initialDate: day),
+              // 기록이 있으면 관리(수정·삭제·추가) 시트, 없으면 바로 추가.
+              onTap: () => hasEvent(meta.key)
+                  ? _EventManageSheet.show(context, type: meta.key, day: day)
+                  : AddEventSheet.show(context,
+                      type: meta.key, initialDate: day),
             ),
         _PlusRow(
           icon: pillMeta.icon,
@@ -259,6 +263,113 @@ class QuickRecordSheet extends StatelessWidget {
             ),
             const Divider(height: 1),
             Flexible(child: DayRecordList(date: date)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 특정 날짜·종류(약/주사/병원/임신)의 기록을 관리하는 시트.
+/// 목록에서 탭하면 수정, 휴지통으로 삭제, 하단 버튼으로 추가.
+class _EventManageSheet extends ConsumerWidget {
+  const _EventManageSheet({required this.type, required this.day});
+
+  final String type;
+  final DateTime day;
+
+  static Future<void> show(BuildContext context,
+      {required String type, required DateTime day}) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _EventManageSheet(type: type, day: day),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meta = eventMeta(type)!;
+    final db = ref.read(databaseProvider);
+    final all = ref.watch(dayEventsProvider).value ?? const [];
+    final items = all
+        .where((e) =>
+            e.type == type &&
+            DateCalc.dateOnly(e.date) == DateCalc.dateOnly(day))
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    String? subtitleOf(DayEvent e) {
+      final parts = <String>[
+        if (typeUsesTime(type)) DateFormat('a h:mm', 'ko').format(e.date),
+        if (e.note != null && e.note!.isNotEmpty) e.note!,
+      ];
+      return parts.isEmpty ? null : parts.join(' · ');
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: SheetHeader(
+                title: '${meta.label} 기록',
+                icon: meta.icon,
+                iconColor: meta.color,
+              ),
+            ),
+            const Divider(height: 1),
+            if (items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('이 날의 ${meta.label} 기록이 없어요.',
+                    style: TextStyle(color: Colors.grey.shade600)),
+              )
+            else
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: items.map((e) {
+                    final subtitle = subtitleOf(e);
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: meta.color.withValues(alpha: 0.18),
+                        child: Icon(meta.icon, color: meta.color, size: 20),
+                      ),
+                      title: Text(
+                          (e.title?.isNotEmpty ?? false) ? e.title! : meta.label),
+                      subtitle: subtitle != null ? Text(subtitle) : null,
+                      onTap: () {
+                        Navigator.pop(context);
+                        AddEventSheet.show(context, type: type, existing: e);
+                      },
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: '삭제',
+                        onPressed: () => db.deleteDayEvent(e.id),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    AddEventSheet.show(context, type: type, initialDate: day);
+                  },
+                  icon: const Icon(Icons.add),
+                  label: Text('${meta.label} 추가'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
