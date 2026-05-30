@@ -406,6 +406,11 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteUltrasound(int id) =>
       (delete(ultrasoundPhotos)..where((t) => t.id.equals(id))).go();
 
+  /// 초음파 사진 메모 수정
+  Future<int> updateUltrasoundNote(int id, String? note) =>
+      (update(ultrasoundPhotos)..where((t) => t.id.equals(id)))
+          .write(UltrasoundPhotosCompanion(note: Value(note)));
+
   // ── 아기 프로필 ─────────────────────────────────────────────────────
   Stream<List<BabyProfile>> watchBabies() =>
       (select(babyProfiles)..orderBy([(t) => OrderingTerm.asc(t.birthDate)]))
