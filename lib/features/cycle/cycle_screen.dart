@@ -142,7 +142,7 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
           ),
           IconButton(
             tooltip: '주기 설정',
-            icon: const Icon(Icons.tune),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => CycleSettingsDialog.show(context),
           ),
         ],
@@ -390,10 +390,15 @@ class _RecordPanel extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  tooltip: '기록 항목 편집',
+                TextButton.icon(
                   onPressed: () => RecordPanelSettingsScreen.show(context),
+                  icon: const Icon(Icons.tune, size: 18),
+                  label: const Text('항목 편집'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade600,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                 ),
               ],
             ),
