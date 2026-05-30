@@ -84,10 +84,22 @@ class _TestTabState extends ConsumerState<_TestTab> {
                     ),
                     const SizedBox(width: 8),
                     MenuAnchor(
+                      alignmentOffset: const Offset(0, 4),
+                      style: MenuStyle(
+                        backgroundColor:
+                            const WidgetStatePropertyAll(Colors.white),
+                        elevation: const WidgetStatePropertyAll(4),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(vertical: 4)),
+                      ),
                       builder: (context, controller, _) => _FilterChip(
-                        label:
-                            '${_filter == 'ovulation' ? '배란테스트' : '임신테스트'} ▾',
+                        label: _filter == 'ovulation' ? '배란테스트' : '임신테스트',
                         selected: _filter != 'all',
+                        dropdown: true,
                         onTap: () => controller.isOpen
                             ? controller.close()
                             : controller.open(),
@@ -102,8 +114,20 @@ class _TestTabState extends ConsumerState<_TestTab> {
                                 ? const Icon(Icons.check,
                                     color: AppTheme.primary, size: 18)
                                 : null,
+                            style: MenuItemButton.styleFrom(
+                              foregroundColor: _filter == opt.$1
+                                  ? AppTheme.primary
+                                  : Colors.grey.shade800,
+                            ),
                             onPressed: () => setState(() => _filter = opt.$1),
-                            child: Text(opt.$2),
+                            child: Text(
+                              opt.$2,
+                              style: TextStyle(
+                                fontWeight: _filter == opt.$1
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -184,28 +208,40 @@ class _TestTabState extends ConsumerState<_TestTab> {
   }
 }
 
-/// 필터용 알약 칩 (선택 시 핑크+흰 글씨).
+/// 필터용 알약 칩 (선택 시 핑크+흰 글씨). [dropdown]이면 끝에 ▾ 아이콘.
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.dropdown = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool dropdown;
 
   @override
   Widget build(BuildContext context) {
+    final fg = selected ? Colors.white : Colors.grey.shade700;
     return ChoiceChip(
-      label: Text(label),
+      label: dropdown
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label),
+                const SizedBox(width: 2),
+                Icon(Icons.arrow_drop_down, size: 18, color: fg),
+              ],
+            )
+          : Text(label),
       selected: selected,
       onSelected: (_) => onTap(),
       showCheckmark: false,
       selectedColor: AppTheme.primary,
       labelStyle: TextStyle(
-        color: selected ? Colors.white : Colors.grey.shade700,
+        color: fg,
         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
       ),
       side: BorderSide(
