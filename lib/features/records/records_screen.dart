@@ -31,36 +31,52 @@ class _Rec {
   final String? subtitle;
 }
 
-/// 모든 기록을 한 화면에서 리스트로 모아보는 화면 (전체 / 약 복용 / 예방접종).
+/// 기록 모아보기 탭(카테고리) 순서. `_collect`이 붙이는 category 문자열과 일치해야 한다.
+const List<String> _kRecordCategories = [
+  '생리',
+  '증상',
+  '사랑',
+  '테스트',
+  '기초체온',
+  '체중',
+  '약 복용',
+  '주사',
+  '병원',
+  '피임약',
+  '임신',
+  '노트',
+  '예방접종',
+];
+
+/// 모든 기록을 한 화면에서 리스트로 모아보는 화면. 전체 + 카테고리별 탭.
 class RecordsScreen extends ConsumerWidget {
   const RecordsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final all = _collect(ref)..sort((a, b) => b.date.compareTo(a.date));
-    final meds = all.where((r) => r.category == '약 복용').toList();
-    final vaccines = all.where((r) => r.category == '예방접종').toList();
 
     return DefaultTabController(
-      length: 3,
+      length: _kRecordCategories.length + 1,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('기록 모아보기'),
-          bottom: const TabBar(
+          bottom: TabBar(
+            isScrollable: true,
             tabs: [
-              Tab(text: '전체'),
-              Tab(text: '약 복용'),
-              Tab(text: '예방접종'),
+              const Tab(text: '전체'),
+              for (final c in _kRecordCategories) Tab(text: c),
             ],
           ),
         ),
         body: TabBarView(
           children: [
             _RecList(items: all, emptyHint: '아직 기록이 없어요.'),
-            _RecList(
-                items: meds, emptyHint: '약 복용 기록이 없어요.\n홈·주기·알림에서 복용을 체크해 보세요.'),
-            _RecList(
-                items: vaccines, emptyHint: '예방접종 기록이 없어요.\n육아 화면에서 접종을 체크해 보세요.'),
+            for (final c in _kRecordCategories)
+              _RecList(
+                items: all.where((r) => r.category == c).toList(),
+                emptyHint: '$c 기록이 없어요.',
+              ),
           ],
         ),
       ),
