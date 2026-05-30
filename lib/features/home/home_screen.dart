@@ -50,7 +50,19 @@ class HomeScreen extends ConsumerWidget {
     final mode = ref.watch(appModeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('forWomen')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipOval(
+              child: Image.asset('assets/icon/icon.png',
+                  width: 30, height: 30, fit: BoxFit.cover),
+            ),
+            const SizedBox(width: 8),
+            const Text('forWomen'),
+          ],
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
