@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import '../../core/db/database.dart';
+import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
 import '../auth/auth_controller.dart';
@@ -38,6 +41,7 @@ class HomeScreen extends ConsumerWidget {
           const _TodaySummary(),
           const SizedBox(height: 4),
           _CycleSummaryCard(),
+          const _TodayMedsCard(),
           _SummaryCard(
             color: AppTheme.accent.withValues(alpha: 0.18),
             icon: Icons.notifications_active,
@@ -96,6 +100,123 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 오늘 복용해야 할 약을 한 탭으로 체크하는 카드.
+/// 복용 기록은 캘린더·알림 배너와 동일한 DayEvent(type 'medication')를 공유한다.
+class _TodayMedsCard extends ConsumerWidget {
+  const _TodayMedsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reminders = ref.watch(remindersProvider).value ?? const [];
+    final events = ref.watch(dayEventsProvider).value ?? const [];
+    final now = DateTime.now();
+    final today = DateCalc.dateOnly(now);
+
+    // 오늘 복용 대상인 약 알림(매일/오늘 요일의 매주/오늘 1회).
+    bool dueToday(Reminder r) {
+      if (!r.enabled || r.kind != 'medication') return false;
+      return switch (r.repeat) {
+        'daily' => true,
+        'weekly' => r.nextTrigger.weekday == now.weekday,
+        _ => DateCalc.dateOnly(r.nextTrigger) == today,
+      };
+    }
+
+    final meds = reminders.where(dueToday).toList()
+      ..sort((a, b) {
+        final am = a.nextTrigger.hour * 60 + a.nextTrigger.minute;
+        final bm = b.nextTrigger.hour * 60 + b.nextTrigger.minute;
+        return am.compareTo(bm);
+      });
+    if (meds.isEmpty) return const SizedBox.shrink();
+
+    // 오늘 이미 복용 처리된 약(제목 → DayEvent id). 해제 시 삭제에 사용.
+    final takenByTitle = <String, int>{};
+    for (final e in events) {
+      if (e.type == 'medication' && DateCalc.dateOnly(e.date) == today) {
+        takenByTitle.putIfAbsent(e.title ?? '', () => e.id);
+      }
+    }
+    final doneCount =
+        meds.where((m) => takenByTitle.containsKey(m.title)).length;
+
+    Future<void> toggle(Reminder m, bool taken) async {
+      if (taken) {
+        await ref.read(reminderServiceProvider).recordTaken(m.title);
+      } else {
+        final id = takenByTitle[m.title];
+        if (id != null) await ref.read(databaseProvider).deleteDayEvent(id);
+      }
+    }
+
+    return Card(
+      color: AppTheme.primary.withValues(alpha: 0.08),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.medication, color: AppTheme.primary, size: 20),
+                const SizedBox(width: 8),
+                const Text('오늘의 약',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Spacer(),
+                Text('$doneCount/${meds.length} 복용',
+                    style: TextStyle(
+                        color: doneCount == meds.length
+                            ? AppTheme.primary
+                            : Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13)),
+                const SizedBox(width: 8),
+              ],
+            ),
+            ...meds.map((m) {
+              final taken = takenByTitle.containsKey(m.title);
+              final time = DateFormat('a h:mm', 'ko').format(m.nextTrigger);
+              return InkWell(
+                onTap: () => toggle(m, !taken),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        taken
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: taken ? AppTheme.primary : Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          m.title,
+                          style: TextStyle(
+                            decoration:
+                                taken ? TextDecoration.lineThrough : null,
+                            color: taken ? Colors.grey : null,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(time,
+                          style: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 12)),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
