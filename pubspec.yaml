@@ -55,12 +55,12 @@ dependencies:
   file_picker: ^8.3.7
   image: ^4.8.0
 
-# 앱 아이콘 (핑크 그라데이션 + 흰 하트)
+# 앱 아이콘 (forWomen 로고 — 보라)
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#F48FB1"
+  adaptive_icon_background: "#8763B6"
   adaptive_icon_foreground: "assets/icon/icon_fg.png"
   remove_alpha_ios: true
 
