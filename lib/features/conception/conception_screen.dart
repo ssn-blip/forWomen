@@ -60,12 +60,6 @@ class _TestTabState extends ConsumerState<_TestTab> {
     final logsAsync = ref.watch(testLogsProvider);
 
     return Scaffold(
-      // 오른쪽: 기록 추가(+), 왼쪽: 판독 대기 타이머
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'testAdd',
-        onPressed: () => _chooseKind(context),
-        child: const Icon(Icons.add),
-      ),
       body: logsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
@@ -106,7 +100,7 @@ class _TestTabState extends ConsumerState<_TestTab> {
               ),
                 ],
               ),
-              // 왼쪽 하단: 판독 대기 타이머
+              // 왼쪽 하단: 판독 대기 타이머 / 오른쪽 하단: 기록 추가(대칭)
               Positioned(
                 left: 16,
                 bottom: 16,
@@ -114,6 +108,15 @@ class _TestTabState extends ConsumerState<_TestTab> {
                   heroTag: 'testTimer',
                   onPressed: () => TestTimerSheet.show(context),
                   child: const Icon(Icons.timer_outlined),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton(
+                  heroTag: 'testAdd',
+                  onPressed: () => _chooseKind(context),
+                  child: const Icon(Icons.add),
                 ),
               ),
             ],
