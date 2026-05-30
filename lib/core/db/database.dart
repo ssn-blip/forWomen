@@ -187,6 +187,16 @@ class DiaperLogs extends Table {
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 }
 
+/// 육아 성장 사진 + 메모
+class BabyPhotos extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get babyId => integer()();
+  DateTimeColumn get takenAt => dateTime()();
+  TextColumn get path => text()();
+  TextColumn get note => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+}
+
 /// 예방접종 완료 기록 (완료한 항목만 저장)
 class VaccinationRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -229,6 +239,7 @@ class DayEvents extends Table {
   FeedingLogs,
   DiaperLogs,
   VaccinationRecords,
+  BabyPhotos,
   DayEvents,
 ])
 class AppDatabase extends _$AppDatabase {
@@ -238,7 +249,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -267,6 +278,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 7) {
             await m.addColumn(testLogs, testLogs.ratio);
+          }
+          if (from < 8) {
+            await m.createTable(babyPhotos);
           }
         },
       );
@@ -460,6 +474,23 @@ class AppDatabase extends _$AppDatabase {
       (delete(vaccinationRecords)
             ..where((t) => t.babyId.equals(babyId) & t.name.equals(name)))
           .go();
+
+  // ── 육아 성장 사진 ───────────────────────────────────────────────────
+  Stream<List<BabyPhoto>> watchBabyPhotos(int babyId) =>
+      (select(babyPhotos)
+            ..where((t) => t.babyId.equals(babyId))
+            ..orderBy([(t) => OrderingTerm.desc(t.takenAt)]))
+          .watch();
+
+  Future<int> insertBabyPhoto(BabyPhotosCompanion entry) =>
+      into(babyPhotos).insert(entry);
+
+  Future<int> deleteBabyPhoto(int id) =>
+      (delete(babyPhotos)..where((t) => t.id.equals(id))).go();
+
+  Future<int> updateBabyPhotoNote(int id, String? note) =>
+      (update(babyPhotos)..where((t) => t.id.equals(id)))
+          .write(BabyPhotosCompanion(note: Value(note)));
 
   // ── 캘린더 이벤트 (배란/약/주사/병원/임신) ──────────────────────────
   Stream<List<DayEvent>> watchDayEvents() =>

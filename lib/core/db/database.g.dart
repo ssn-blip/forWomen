@@ -5540,6 +5540,397 @@ class VaccinationRecordsCompanion extends UpdateCompanion<VaccinationRecord> {
   }
 }
 
+class $BabyPhotosTable extends BabyPhotos
+    with TableInfo<$BabyPhotosTable, BabyPhoto> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BabyPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _babyIdMeta = const VerificationMeta('babyId');
+  @override
+  late final GeneratedColumn<int> babyId = GeneratedColumn<int>(
+    'baby_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _takenAtMeta = const VerificationMeta(
+    'takenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> takenAt = GeneratedColumn<DateTime>(
+    'taken_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    babyId,
+    takenAt,
+    path,
+    note,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'baby_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BabyPhoto> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('baby_id')) {
+      context.handle(
+        _babyIdMeta,
+        babyId.isAcceptableOrUnknown(data['baby_id']!, _babyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_babyIdMeta);
+    }
+    if (data.containsKey('taken_at')) {
+      context.handle(
+        _takenAtMeta,
+        takenAt.isAcceptableOrUnknown(data['taken_at']!, _takenAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_takenAtMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BabyPhoto map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BabyPhoto(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      babyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}baby_id'],
+      )!,
+      takenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}taken_at'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
+    );
+  }
+
+  @override
+  $BabyPhotosTable createAlias(String alias) {
+    return $BabyPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class BabyPhoto extends DataClass implements Insertable<BabyPhoto> {
+  final int id;
+  final int babyId;
+  final DateTime takenAt;
+  final String path;
+  final String? note;
+  final bool synced;
+  const BabyPhoto({
+    required this.id,
+    required this.babyId,
+    required this.takenAt,
+    required this.path,
+    this.note,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['baby_id'] = Variable<int>(babyId);
+    map['taken_at'] = Variable<DateTime>(takenAt);
+    map['path'] = Variable<String>(path);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  BabyPhotosCompanion toCompanion(bool nullToAbsent) {
+    return BabyPhotosCompanion(
+      id: Value(id),
+      babyId: Value(babyId),
+      takenAt: Value(takenAt),
+      path: Value(path),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      synced: Value(synced),
+    );
+  }
+
+  factory BabyPhoto.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BabyPhoto(
+      id: serializer.fromJson<int>(json['id']),
+      babyId: serializer.fromJson<int>(json['babyId']),
+      takenAt: serializer.fromJson<DateTime>(json['takenAt']),
+      path: serializer.fromJson<String>(json['path']),
+      note: serializer.fromJson<String?>(json['note']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'babyId': serializer.toJson<int>(babyId),
+      'takenAt': serializer.toJson<DateTime>(takenAt),
+      'path': serializer.toJson<String>(path),
+      'note': serializer.toJson<String?>(note),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  BabyPhoto copyWith({
+    int? id,
+    int? babyId,
+    DateTime? takenAt,
+    String? path,
+    Value<String?> note = const Value.absent(),
+    bool? synced,
+  }) => BabyPhoto(
+    id: id ?? this.id,
+    babyId: babyId ?? this.babyId,
+    takenAt: takenAt ?? this.takenAt,
+    path: path ?? this.path,
+    note: note.present ? note.value : this.note,
+    synced: synced ?? this.synced,
+  );
+  BabyPhoto copyWithCompanion(BabyPhotosCompanion data) {
+    return BabyPhoto(
+      id: data.id.present ? data.id.value : this.id,
+      babyId: data.babyId.present ? data.babyId.value : this.babyId,
+      takenAt: data.takenAt.present ? data.takenAt.value : this.takenAt,
+      path: data.path.present ? data.path.value : this.path,
+      note: data.note.present ? data.note.value : this.note,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BabyPhoto(')
+          ..write('id: $id, ')
+          ..write('babyId: $babyId, ')
+          ..write('takenAt: $takenAt, ')
+          ..write('path: $path, ')
+          ..write('note: $note, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, babyId, takenAt, path, note, synced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BabyPhoto &&
+          other.id == this.id &&
+          other.babyId == this.babyId &&
+          other.takenAt == this.takenAt &&
+          other.path == this.path &&
+          other.note == this.note &&
+          other.synced == this.synced);
+}
+
+class BabyPhotosCompanion extends UpdateCompanion<BabyPhoto> {
+  final Value<int> id;
+  final Value<int> babyId;
+  final Value<DateTime> takenAt;
+  final Value<String> path;
+  final Value<String?> note;
+  final Value<bool> synced;
+  const BabyPhotosCompanion({
+    this.id = const Value.absent(),
+    this.babyId = const Value.absent(),
+    this.takenAt = const Value.absent(),
+    this.path = const Value.absent(),
+    this.note = const Value.absent(),
+    this.synced = const Value.absent(),
+  });
+  BabyPhotosCompanion.insert({
+    this.id = const Value.absent(),
+    required int babyId,
+    required DateTime takenAt,
+    required String path,
+    this.note = const Value.absent(),
+    this.synced = const Value.absent(),
+  }) : babyId = Value(babyId),
+       takenAt = Value(takenAt),
+       path = Value(path);
+  static Insertable<BabyPhoto> custom({
+    Expression<int>? id,
+    Expression<int>? babyId,
+    Expression<DateTime>? takenAt,
+    Expression<String>? path,
+    Expression<String>? note,
+    Expression<bool>? synced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (babyId != null) 'baby_id': babyId,
+      if (takenAt != null) 'taken_at': takenAt,
+      if (path != null) 'path': path,
+      if (note != null) 'note': note,
+      if (synced != null) 'synced': synced,
+    });
+  }
+
+  BabyPhotosCompanion copyWith({
+    Value<int>? id,
+    Value<int>? babyId,
+    Value<DateTime>? takenAt,
+    Value<String>? path,
+    Value<String?>? note,
+    Value<bool>? synced,
+  }) {
+    return BabyPhotosCompanion(
+      id: id ?? this.id,
+      babyId: babyId ?? this.babyId,
+      takenAt: takenAt ?? this.takenAt,
+      path: path ?? this.path,
+      note: note ?? this.note,
+      synced: synced ?? this.synced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (babyId.present) {
+      map['baby_id'] = Variable<int>(babyId.value);
+    }
+    if (takenAt.present) {
+      map['taken_at'] = Variable<DateTime>(takenAt.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BabyPhotosCompanion(')
+          ..write('id: $id, ')
+          ..write('babyId: $babyId, ')
+          ..write('takenAt: $takenAt, ')
+          ..write('path: $path, ')
+          ..write('note: $note, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DayEventsTable extends DayEvents
     with TableInfo<$DayEventsTable, DayEvent> {
   @override
@@ -5945,6 +6336,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DiaperLogsTable diaperLogs = $DiaperLogsTable(this);
   late final $VaccinationRecordsTable vaccinationRecords =
       $VaccinationRecordsTable(this);
+  late final $BabyPhotosTable babyPhotos = $BabyPhotosTable(this);
   late final $DayEventsTable dayEvents = $DayEventsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -5964,6 +6356,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     feedingLogs,
     diaperLogs,
     vaccinationRecords,
+    babyPhotos,
     dayEvents,
   ];
 }
@@ -8887,6 +9280,216 @@ typedef $$VaccinationRecordsTableProcessedTableManager =
       VaccinationRecord,
       PrefetchHooks Function()
     >;
+typedef $$BabyPhotosTableCreateCompanionBuilder =
+    BabyPhotosCompanion Function({
+      Value<int> id,
+      required int babyId,
+      required DateTime takenAt,
+      required String path,
+      Value<String?> note,
+      Value<bool> synced,
+    });
+typedef $$BabyPhotosTableUpdateCompanionBuilder =
+    BabyPhotosCompanion Function({
+      Value<int> id,
+      Value<int> babyId,
+      Value<DateTime> takenAt,
+      Value<String> path,
+      Value<String?> note,
+      Value<bool> synced,
+    });
+
+class $$BabyPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $BabyPhotosTable> {
+  $$BabyPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get babyId => $composableBuilder(
+    column: $table.babyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get takenAt => $composableBuilder(
+    column: $table.takenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BabyPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $BabyPhotosTable> {
+  $$BabyPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get babyId => $composableBuilder(
+    column: $table.babyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get takenAt => $composableBuilder(
+    column: $table.takenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BabyPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BabyPhotosTable> {
+  $$BabyPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get babyId =>
+      $composableBuilder(column: $table.babyId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get takenAt =>
+      $composableBuilder(column: $table.takenAt, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$BabyPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BabyPhotosTable,
+          BabyPhoto,
+          $$BabyPhotosTableFilterComposer,
+          $$BabyPhotosTableOrderingComposer,
+          $$BabyPhotosTableAnnotationComposer,
+          $$BabyPhotosTableCreateCompanionBuilder,
+          $$BabyPhotosTableUpdateCompanionBuilder,
+          (
+            BabyPhoto,
+            BaseReferences<_$AppDatabase, $BabyPhotosTable, BabyPhoto>,
+          ),
+          BabyPhoto,
+          PrefetchHooks Function()
+        > {
+  $$BabyPhotosTableTableManager(_$AppDatabase db, $BabyPhotosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BabyPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BabyPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BabyPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> babyId = const Value.absent(),
+                Value<DateTime> takenAt = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => BabyPhotosCompanion(
+                id: id,
+                babyId: babyId,
+                takenAt: takenAt,
+                path: path,
+                note: note,
+                synced: synced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int babyId,
+                required DateTime takenAt,
+                required String path,
+                Value<String?> note = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => BabyPhotosCompanion.insert(
+                id: id,
+                babyId: babyId,
+                takenAt: takenAt,
+                path: path,
+                note: note,
+                synced: synced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BabyPhotosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BabyPhotosTable,
+      BabyPhoto,
+      $$BabyPhotosTableFilterComposer,
+      $$BabyPhotosTableOrderingComposer,
+      $$BabyPhotosTableAnnotationComposer,
+      $$BabyPhotosTableCreateCompanionBuilder,
+      $$BabyPhotosTableUpdateCompanionBuilder,
+      (BabyPhoto, BaseReferences<_$AppDatabase, $BabyPhotosTable, BabyPhoto>),
+      BabyPhoto,
+      PrefetchHooks Function()
+    >;
 typedef $$DayEventsTableCreateCompanionBuilder =
     DayEventsCompanion Function({
       Value<int> id,
@@ -9124,6 +9727,8 @@ class $AppDatabaseManager {
       $$DiaperLogsTableTableManager(_db, _db.diaperLogs);
   $$VaccinationRecordsTableTableManager get vaccinationRecords =>
       $$VaccinationRecordsTableTableManager(_db, _db.vaccinationRecords);
+  $$BabyPhotosTableTableManager get babyPhotos =>
+      $$BabyPhotosTableTableManager(_db, _db.babyPhotos);
   $$DayEventsTableTableManager get dayEvents =>
       $$DayEventsTableTableManager(_db, _db.dayEvents);
 }

@@ -1,12 +1,16 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
+import '../../core/utils/image_storage.dart';
 import 'baby_providers.dart';
 import 'register_baby_sheet.dart';
 import 'vaccine_schedule.dart';
@@ -99,6 +103,8 @@ class _BabyDashboard extends ConsumerWidget {
         _QuickDiaper(babyId: baby.id),
         const SizedBox(height: 16),
         _RecentActivity(feedings: feedings, diapers: diapers),
+        const SizedBox(height: 16),
+        _GrowthPhotos(babyId: baby.id),
         const SizedBox(height: 16),
         const Text('예방접종',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -331,6 +337,261 @@ class _RecentActivity extends ConsumerWidget {
             )),
       ],
     );
+  }
+}
+
+/// 메모 입력 취소 구분용 센티넬.
+const String _kCanceled = ' __canceled__';
+
+/// 육아 사진 메모 입력/수정 다이얼로그.
+/// 반환: 입력 메모(빈 문자열이면 null 저장), 취소 시 [_kCanceled].
+Future<String?> _photoNoteDialog(
+  BuildContext context, {
+  String? imagePath,
+  String? initial,
+}) async {
+  final ctrl = TextEditingController(text: initial ?? '');
+  return showDialog<String?>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('성장 사진 메모'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (imagePath != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(File(imagePath),
+                      height: 160, width: double.maxFinite, fit: BoxFit.cover),
+                ),
+              if (imagePath != null) const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                maxLines: 3,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  hintText: '예) 첫 뒤집기 성공! 100일 사진 📸',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, _kCanceled),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+          child: const Text('저장'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// 성장 사진 + 메모 섹션.
+class _GrowthPhotos extends ConsumerWidget {
+  const _GrowthPhotos({required this.babyId});
+
+  final int babyId;
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600);
+    if (picked == null || !context.mounted) return;
+
+    final note = await _photoNoteDialog(context, imagePath: picked.path);
+    if (note == _kCanceled) return;
+
+    final saved = await ImageStorage.persist(picked.path, subdir: 'baby');
+    await ref.read(databaseProvider).insertBabyPhoto(BabyPhotosCompanion(
+          babyId: Value(babyId),
+          takenAt: Value(DateTime.now()),
+          path: Value(saved),
+          note: Value(note!.isEmpty ? null : note),
+        ));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final photos = ref.watch(babyPhotosProvider(babyId)).value ?? const [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('성장 사진',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () => _add(context, ref),
+              icon: const Icon(Icons.add_a_photo, size: 18),
+              label: const Text('사진 추가'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        if (photos.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(Icons.photo_camera_outlined,
+                      color: Colors.grey.shade400),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('사진과 메모로 성장 순간을 남겨보세요.',
+                        style: TextStyle(color: Colors.grey.shade600)),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: photos.length,
+            itemBuilder: (context, i) => _GrowthTile(photo: photos[i]),
+          ),
+      ],
+    );
+  }
+}
+
+class _GrowthTile extends ConsumerWidget {
+  const _GrowthTile({required this.photo});
+
+  final BabyPhoto photo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () => _viewFull(context, ref),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.file(File(photo.path), fit: BoxFit.cover),
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: GestureDetector(
+                      onTap: () =>
+                          ref.read(databaseProvider).deleteBabyPhoto(photo.id),
+                      child: const CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Colors.black45,
+                        child:
+                            Icon(Icons.close, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat('yyyy.MM.dd', 'ko').format(photo.takenAt),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  if ((photo.note ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      photo.note!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.grey.shade700),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _viewFull(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: InteractiveViewer(child: Image.file(File(photo.path))),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      (photo.note ?? '').isEmpty ? '메모 없음' : photo.note!,
+                      style: TextStyle(
+                        color: (photo.note ?? '').isEmpty
+                            ? Colors.white60
+                            : Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white),
+                    tooltip: '메모 수정',
+                    onPressed: () => _editNote(context, ref),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editNote(BuildContext context, WidgetRef ref) async {
+    final edited = await _photoNoteDialog(context, initial: photo.note ?? '');
+    if (edited == _kCanceled) return;
+    await ref
+        .read(databaseProvider)
+        .updateBabyPhotoNote(photo.id, edited!.isEmpty ? null : edited);
+    if (context.mounted) Navigator.pop(context);
   }
 }
 
