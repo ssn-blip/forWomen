@@ -10,6 +10,7 @@ import '../../core/utils/date_calc.dart';
 import '../baby/birth_record_sheet.dart';
 import '../cycle/app_mode.dart';
 import '../cycle/mode_prompt.dart';
+import '../diary/memo_section.dart';
 import 'fetal_info.dart';
 import 'pregnancy_providers.dart';
 import 'pregnancy_sheets.dart';
@@ -133,6 +134,8 @@ class _PregnancyDashboard extends ConsumerWidget {
           onAdd: () => AddSymptomSheet.show(context),
         ),
         const _SymptomSection(),
+        const SizedBox(height: 16),
+        const MemoSection(kind: 'pregnancy_memo'),
         const SizedBox(height: 16),
         Center(
           child: FilledButton.icon(

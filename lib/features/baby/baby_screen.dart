@@ -11,6 +11,7 @@ import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
 import '../../core/utils/image_storage.dart';
+import '../diary/memo_section.dart';
 import 'baby_providers.dart';
 import 'register_baby_sheet.dart';
 import 'vaccine_schedule.dart';
@@ -105,6 +106,8 @@ class _BabyDashboard extends ConsumerWidget {
         _RecentActivity(feedings: feedings, diapers: diapers),
         const SizedBox(height: 16),
         _GrowthPhotos(babyId: baby.id),
+        const SizedBox(height: 16),
+        const MemoSection(kind: 'baby_memo'),
         const SizedBox(height: 16),
         const Text('예방접종',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
