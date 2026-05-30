@@ -55,7 +55,7 @@ dependencies:
   file_picker: ^8.3.7
   image: ^4.8.0
 
-# 앱 아이콘 (forWomen 로고 — 보라)
+# 앱 아이콘 (forWomen 로고 — 보라). 아이콘 모양(원/사각)은 폰 런처가 결정함.
 flutter_launcher_icons:
   android: true
   ios: true
