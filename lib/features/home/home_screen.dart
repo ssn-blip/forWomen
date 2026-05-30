@@ -13,6 +13,32 @@ import '../cycle/cycle_providers.dart';
 import '../pregnancy/pregnancy_providers.dart';
 import '../reminders/reminders_providers.dart';
 
+/// 홈 바로가기 항목.
+typedef _Qa = ({IconData icon, String label, String route});
+
+const List<_Qa> _kQuickActions = [
+  (icon: Icons.menu_book, label: '일기', route: '/diary'),
+  (icon: Icons.science, label: '테스트', route: '/conception'),
+  (icon: Icons.pregnant_woman, label: '임신', route: '/pregnancy'),
+  (icon: Icons.photo_library, label: '초음파', route: '/ultrasound'),
+  (icon: Icons.child_care, label: '육아', route: '/baby'),
+  (icon: Icons.info_outline, label: '정보', route: '/info'),
+];
+
+/// 모드에 맞는 메뉴를 앞으로 당겨 정렬한다.
+List<_Qa> _quickActionsForMode(AppMode mode) {
+  final priority = switch (mode) {
+    AppMode.pregnancy => ['임신', '초음파'],
+    AppMode.conception => ['테스트'],
+    AppMode.period => <String>[],
+  };
+  final front = [
+    for (final l in priority) _kQuickActions.firstWhere((a) => a.label == l),
+  ];
+  final rest = _kQuickActions.where((a) => !priority.contains(a.label));
+  return [...front, ...rest];
+}
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -20,6 +46,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).value;
     final name = user?.displayName ?? '회원';
+    final mode = ref.watch(appModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('forWomen')),
@@ -74,36 +101,12 @@ class HomeScreen extends ConsumerWidget {
             crossAxisSpacing: 12,
             childAspectRatio: 0.95,
             children: [
-              _QuickAction(
-                icon: Icons.menu_book,
-                label: '일기',
-                onTap: () => context.push('/diary'),
-              ),
-              _QuickAction(
-                icon: Icons.science,
-                label: '테스트',
-                onTap: () => context.push('/conception'),
-              ),
-              _QuickAction(
-                icon: Icons.pregnant_woman,
-                label: '임신',
-                onTap: () => context.push('/pregnancy'),
-              ),
-              _QuickAction(
-                icon: Icons.photo_library,
-                label: '초음파',
-                onTap: () => context.push('/ultrasound'),
-              ),
-              _QuickAction(
-                icon: Icons.child_care,
-                label: '육아',
-                onTap: () => context.push('/baby'),
-              ),
-              _QuickAction(
-                icon: Icons.info_outline,
-                label: '정보',
-                onTap: () => context.push('/info'),
-              ),
+              for (final a in _quickActionsForMode(mode))
+                _QuickAction(
+                  icon: a.icon,
+                  label: a.label,
+                  onTap: () => context.push(a.route),
+                ),
             ],
           ),
         ],
@@ -301,24 +304,37 @@ class _TodaySummary extends ConsumerWidget {
       icon = Icons.pregnant_woman;
     } else if (pred != null) {
       final dPeriod = pred.daysUntilNextPeriod(today);
-      final dOvu = DateCalc.daysBetween(today, pred.ovulation);
-      final inFertile = !today.isBefore(pred.fertileStart) &&
-          !today.isAfter(pred.fertileEnd);
-      if (DateCalc.dateOnly(pred.ovulation) == today) {
-        headline = '오늘 배란 예정일이에요';
-        icon = Icons.brightness_5;
-      } else if (inFertile) {
-        headline = dOvu > 0 ? '가임기 · 배란까지 D-$dOvu' : '가임기예요';
-        icon = Icons.eco;
-      } else {
+      if (mode == AppMode.period) {
+        // 생리·피임 모드: 생리 중심.
         headline = dPeriod > 0
             ? '다음 생리까지 D-$dPeriod'
             : (dPeriod == 0 ? '오늘이 생리 예정일이에요' : '생리 예정일 ${-dPeriod}일 경과');
+        detail = '생리 예정 ${pred.nextPeriod.month}/${pred.nextPeriod.day}'
+            ' · 평균 ${pred.cycleLength}일 주기';
         icon = Icons.water_drop;
+      } else {
+        // 임신준비 모드: 가임·배란 중심.
+        final dOvu = DateCalc.daysBetween(today, pred.ovulation);
+        final inFertile = !today.isBefore(pred.fertileStart) &&
+            !today.isAfter(pred.fertileEnd);
+        if (DateCalc.dateOnly(pred.ovulation) == today) {
+          headline = '오늘 배란 예정일이에요';
+          icon = Icons.brightness_5;
+        } else if (inFertile) {
+          headline = dOvu > 0 ? '가임기 · 배란까지 D-$dOvu' : '가임기예요';
+          icon = Icons.eco;
+        } else {
+          headline = dPeriod > 0
+              ? '다음 생리까지 D-$dPeriod'
+              : (dPeriod == 0
+                  ? '오늘이 생리 예정일이에요'
+                  : '생리 예정일 ${-dPeriod}일 경과');
+          icon = Icons.water_drop;
+        }
+        detail = '배란 ${pred.ovulation.month}/${pred.ovulation.day} · '
+            '가임기 ${pred.fertileStart.month}/${pred.fertileStart.day}'
+            '~${pred.fertileEnd.month}/${pred.fertileEnd.day}';
       }
-      detail = '배란 ${pred.ovulation.month}/${pred.ovulation.day} · '
-          '가임기 ${pred.fertileStart.month}/${pred.fertileStart.day}'
-          '~${pred.fertileEnd.month}/${pred.fertileEnd.day}';
     } else {
       headline = '생리를 기록하면 다음 주기를 예측해 드려요';
       detail = alarmText;
