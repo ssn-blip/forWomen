@@ -22,6 +22,7 @@ const List<_Qa> _kQuickActions = [
   (icon: Icons.pregnant_woman, label: '임신', route: '/pregnancy'),
   (icon: Icons.photo_library, label: '초음파', route: '/ultrasound'),
   (icon: Icons.child_care, label: '육아', route: '/baby'),
+  (icon: Icons.list_alt, label: '기록', route: '/records'),
   (icon: Icons.info_outline, label: '정보', route: '/info'),
 ];
 

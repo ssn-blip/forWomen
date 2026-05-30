@@ -49,11 +49,6 @@ class ProfileScreen extends ConsumerWidget {
           const _ModeSelector(),
           const SizedBox(height: 8),
           _SectionTile(
-            icon: Icons.list_alt,
-            title: '기록 모아보기 (약 복용·예방접종)',
-            onTap: () => context.push('/records'),
-          ),
-          _SectionTile(
             icon: Icons.insights,
             title: '기록 통계',
             onTap: () => context.push('/stats'),
