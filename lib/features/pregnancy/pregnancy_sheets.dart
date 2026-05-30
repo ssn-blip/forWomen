@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 체중 기록 시트.
 class AddWeightSheet extends ConsumerStatefulWidget {
@@ -57,10 +58,7 @@ class _WeightState extends ConsumerState<AddWeightSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text('체중 기록',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
+          const SheetHeader(title: '체중 기록'),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -167,11 +165,7 @@ class _SymptomState extends ConsumerState<AddSymptomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
-              child: Text('증상 기록',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
+            const SheetHeader(title: '증상 기록'),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,

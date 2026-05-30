@@ -25,7 +25,6 @@ const Map<String, EventTypeMeta> kEventTypes = {
     label: '사랑',
     icon: Icons.favorite,
     color: Color(0xFFF06292),
-    titleHint: '메모 (선택)',
   ),
   'medication': EventTypeMeta(
     key: 'medication',
@@ -68,6 +67,9 @@ const EventTypeMeta pillMeta = EventTypeMeta(
 
 /// 시간 입력이 의미 있는 종류 (약 복용·주사).
 bool typeUsesTime(String key) => key == 'medication' || key == 'injection';
+
+/// 제목(이름) 입력이 필요한 종류. 사랑(관계)은 날짜만으로 기록되므로 제목이 없다.
+bool typeUsesTitle(String key) => key != 'love';
 
 EventTypeMeta? eventMeta(String key) =>
     kEventTypes[key] ?? (key == 'pill' ? pillMeta : null);

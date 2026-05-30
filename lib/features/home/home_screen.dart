@@ -270,6 +270,7 @@ class _TodaySummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final today = DateCalc.dateOnly(DateTime.now());
+    final mode = ref.watch(appModeProvider);
     final preg = ref.watch(activePregnancyProvider).value;
     final pred = ref.watch(cyclePredictionProvider);
     final reminders = ref.watch(remindersProvider).value ?? const [];
@@ -279,21 +280,48 @@ class _TodaySummary extends ConsumerWidget {
             (r.repeat != 'none' ||
                 DateCalc.dateOnly(r.nextTrigger) == today))
         .length;
+    final alarmText = todayReminders > 0
+        ? '오늘 예정된 알림 $todayReminders건'
+        : '오늘 예정된 알림이 없어요';
 
+    // 모드에 맞춰 보여줄 내용을 정한다.
+    // - 임신 모드: 임신 주차·출산까지 D-day
+    // - 그 외(생리·피임 / 임신준비): 생리·가임·배란 예측
     String headline;
+    String detail;
     IconData icon;
-    if (preg != null) {
+    if (mode == AppMode.pregnancy && preg != null) {
       final s = PregnancyStatus.from(preg, today);
       headline = '임신 ${s.week}주 ${s.dayOfWeek}일 · 출산까지 D-${s.dDay}';
+      detail = '출산 예정일 ${DateFormat('yyyy.MM.dd', 'ko').format(s.dueDate)}';
+      icon = Icons.pregnant_woman;
+    } else if (mode == AppMode.pregnancy) {
+      headline = '임신을 등록해 주세요';
+      detail = '임신 메뉴에서 등록하면 주차·출산예정일을 계산해요';
       icon = Icons.pregnant_woman;
     } else if (pred != null) {
-      final d = pred.daysUntilNextPeriod(today);
-      headline = d > 0
-          ? '다음 생리까지 D-$d'
-          : (d == 0 ? '오늘이 생리 예정일이에요' : '생리 예정일 ${-d}일 경과');
-      icon = Icons.water_drop;
+      final dPeriod = pred.daysUntilNextPeriod(today);
+      final dOvu = DateCalc.daysBetween(today, pred.ovulation);
+      final inFertile = !today.isBefore(pred.fertileStart) &&
+          !today.isAfter(pred.fertileEnd);
+      if (DateCalc.dateOnly(pred.ovulation) == today) {
+        headline = '오늘 배란 예정일이에요';
+        icon = Icons.brightness_5;
+      } else if (inFertile) {
+        headline = dOvu > 0 ? '가임기 · 배란까지 D-$dOvu' : '가임기예요';
+        icon = Icons.eco;
+      } else {
+        headline = dPeriod > 0
+            ? '다음 생리까지 D-$dPeriod'
+            : (dPeriod == 0 ? '오늘이 생리 예정일이에요' : '생리 예정일 ${-dPeriod}일 경과');
+        icon = Icons.water_drop;
+      }
+      detail = '배란 ${pred.ovulation.month}/${pred.ovulation.day} · '
+          '가임기 ${pred.fertileStart.month}/${pred.fertileStart.day}'
+          '~${pred.fertileEnd.month}/${pred.fertileEnd.day}';
     } else {
       headline = '생리를 기록하면 다음 주기를 예측해 드려요';
+      detail = alarmText;
       icon = Icons.favorite;
     }
 
@@ -324,9 +352,7 @@ class _TodaySummary extends ConsumerWidget {
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
                 Text(
-                  todayReminders > 0
-                      ? '오늘 예정된 알림 $todayReminders건'
-                      : '오늘 예정된 알림이 없어요',
+                  detail,
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],

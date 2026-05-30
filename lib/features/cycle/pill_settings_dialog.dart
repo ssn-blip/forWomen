@@ -103,7 +103,7 @@ class _State extends ConsumerState<PillSettingsDialog> {
   Future<void> _deletePack() async {
     final start = DateCalc.dateOnly(_date);
     final end = start.add(Duration(days: _count - 1));
-    if (!await _confirm('이번 판 삭제',
+    if (!await _confirm('이번 주기 삭제',
         '${DateFormat('M월 d일', 'ko').format(start)}부터 $_count정만 삭제할까요?')) {
       return;
     }
@@ -218,7 +218,7 @@ class _State extends ConsumerState<PillSettingsDialog> {
                 TextButton.icon(
                   onPressed: _deletePack,
                   icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
-                  label: Text('이번 판만',
+                  label: Text('이번 주기만',
                       style: TextStyle(color: Colors.red.shade400)),
                 ),
                 TextButton.icon(

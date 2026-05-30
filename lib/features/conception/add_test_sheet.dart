@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/utils/image_storage.dart';
+import '../../core/widgets/sheet_header.dart';
 import 'strip_analyzer.dart';
 
 /// 임테기/배란테스트 기록 입력 시트. 사진 첨부 가능.
@@ -78,6 +79,14 @@ class _State extends ConsumerState<AddTestSheet> {
   }
 
   Future<void> _save() async {
+    // 사진·결과·메모가 모두 비어 있으면(=판독 불가 기본값 그대로) 저장하지 않는다.
+    final hasNote = _noteCtrl.text.trim().isNotEmpty;
+    if (_photoPath == null && _result == 'unknown' && !hasNote) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('사진을 첨부하거나 결과를 선택해 주세요')),
+      );
+      return;
+    }
     await ref.read(databaseProvider).insertTestLog(TestLogsCompanion(
           date: Value(_date),
           kind: Value(widget.kind),
@@ -153,11 +162,7 @@ class _State extends ConsumerState<AddTestSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Text(_isPregnancy ? '임신테스트 기록' : '배란테스트 기록',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
+            SheetHeader(title: _isPregnancy ? '임신테스트 기록' : '배란테스트 기록'),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,

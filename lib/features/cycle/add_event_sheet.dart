@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 import 'day_event_types.dart';
 
 /// 배란·약복용·주사·병원·임신 등 범용 일자 기록 입력/편집 시트.
@@ -72,6 +73,13 @@ class _State extends ConsumerState<AddEventSheet> {
     final db = ref.read(databaseProvider);
     final title = _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim();
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
+    // 제목을 쓰는 종류(약/주사/병원/임신)는 아무것도 입력하지 않으면 저장하지 않는다.
+    if (typeUsesTitle(widget.type) && title == null && note == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('내용을 입력해 주세요')),
+      );
+      return;
+    }
     final e = widget.existing;
     if (e != null) {
       await db.updateDayEvent(
@@ -101,17 +109,10 @@ class _State extends ConsumerState<AddEventSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(meta.icon, color: meta.color),
-                const SizedBox(width: 8),
-                Text('${meta.label} 기록${_isEditing ? ' 수정' : ''}',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
+          SheetHeader(
+            title: '${meta.label} 기록${_isEditing ? ' 수정' : ''}',
+            icon: meta.icon,
+            iconColor: meta.color,
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -142,11 +143,13 @@ class _State extends ConsumerState<AddEventSheet> {
               },
             ),
           const SizedBox(height: 8),
-          TextField(
-            controller: _titleCtrl,
-            decoration: InputDecoration(labelText: meta.titleHint ?? '제목'),
-          ),
-          const SizedBox(height: 12),
+          if (typeUsesTitle(widget.type)) ...[
+            TextField(
+              controller: _titleCtrl,
+              decoration: InputDecoration(labelText: meta.titleHint ?? '제목'),
+            ),
+            const SizedBox(height: 12),
+          ],
           TextField(
             controller: _noteCtrl,
             decoration: const InputDecoration(labelText: '메모 (선택)'),

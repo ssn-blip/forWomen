@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 아기 프로필 등록 시트.
 class RegisterBabySheet extends ConsumerStatefulWidget {
@@ -58,10 +59,7 @@ class _State extends ConsumerState<RegisterBabySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text('아기 등록',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
+          const SheetHeader(title: '아기 등록'),
           const SizedBox(height: 16),
           TextField(
             controller: _nameCtrl,

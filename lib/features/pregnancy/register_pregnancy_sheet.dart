@@ -6,13 +6,15 @@ import 'package:intl/intl.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/utils/date_calc.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 임신 등록 시트. 마지막 생리 시작일을 받아 출산예정일을 자동 계산한다.
 class RegisterPregnancySheet extends ConsumerStatefulWidget {
   const RegisterPregnancySheet({super.key});
 
-  static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
+  /// 저장(등록)하면 true, 그냥 닫으면 null을 반환한다.
+  static Future<bool?> show(BuildContext context) {
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (_) => const RegisterPregnancySheet(),
@@ -37,7 +39,7 @@ class _State extends ConsumerState<RegisterPregnancySheet> {
           status: const Value('active'),
           createdAt: Value(DateTime.now()),
         ));
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -57,10 +59,7 @@ class _State extends ConsumerState<RegisterPregnancySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text('임신 등록',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
+          const SheetHeader(title: '임신 등록'),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,

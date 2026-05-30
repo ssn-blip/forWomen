@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 기초체온 입력/편집 시트. [existing]이 있으면 편집 모드.
 class AddBbtSheet extends ConsumerStatefulWidget {
@@ -79,11 +80,7 @@ class _State extends ConsumerState<AddBbtSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Text(_isEditing ? '기초체온 수정' : '기초체온 기록',
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
+          SheetHeader(title: _isEditing ? '기초체온 수정' : '기초체온 기록'),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,

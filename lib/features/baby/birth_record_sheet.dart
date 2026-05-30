@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 출산 기록 시트. 출산 정보를 입력하면 아기 프로필을 만들고
 /// 진행 중이던 임신을 완료 상태로 전환한다.
@@ -88,11 +89,7 @@ class _State extends ConsumerState<BirthRecordSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
-              child: Text('출산 기록',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
+            const SheetHeader(title: '출산 기록'),
             const SizedBox(height: 16),
             TextField(
               controller: _nameCtrl,

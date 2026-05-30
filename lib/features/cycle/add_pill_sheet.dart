@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/widgets/sheet_header.dart';
 import 'day_event_types.dart';
 
 /// 피임약 기록 시트.
@@ -98,17 +99,10 @@ class _State extends ConsumerState<AddPillSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(pillMeta.icon, color: pillMeta.color),
-                const SizedBox(width: 8),
-                Text(_isEditing ? '피임약 수정' : '피임약 기록',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
+          SheetHeader(
+            title: _isEditing ? '피임약 수정' : '피임약 기록',
+            icon: pillMeta.icon,
+            iconColor: pillMeta.color,
           ),
           const SizedBox(height: 16),
           // 편집 모드에서는 한 판/1정 선택을 숨긴다.

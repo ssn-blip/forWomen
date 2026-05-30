@@ -8,6 +8,8 @@ import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
 import '../baby/birth_record_sheet.dart';
+import '../cycle/app_mode.dart';
+import '../cycle/mode_prompt.dart';
 import 'fetal_info.dart';
 import 'pregnancy_providers.dart';
 import 'pregnancy_sheets.dart';
@@ -66,11 +68,11 @@ class PregnancyScreen extends ConsumerWidget {
   }
 }
 
-class _NoPregnancy extends StatelessWidget {
+class _NoPregnancy extends ConsumerWidget {
   const _NoPregnancy();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -87,7 +89,14 @@ class _NoPregnancy extends StatelessWidget {
                 style: TextStyle(color: Colors.grey.shade600)),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => RegisterPregnancySheet.show(context),
+              onPressed: () async {
+                final saved = await RegisterPregnancySheet.show(context);
+                if (saved == true && context.mounted) {
+                  await promptSwitchMode(context, ref, AppMode.pregnancy,
+                      message: '임신을 등록했어요. 홈에서 임신 주차·출산까지 D-day를 보려면 '
+                          '임신 모드로 바꿔보세요.');
+                }
+              },
               icon: const Icon(Icons.add),
               label: const Text('임신 등록'),
             ),

@@ -4,22 +4,19 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/db/database.dart';
-import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
-import 'add_cycle_sheet.dart';
-import 'add_event_sheet.dart';
 import 'cycle_providers.dart';
 import 'cycle_settings.dart';
 import 'cycle_settings_dialog.dart';
 import 'day_event_types.dart';
-import 'day_note_screen.dart';
-import 'pill_settings_dialog.dart';
 import 'quick_record_sheet.dart';
-import 'symptom_catalog.dart';
-import 'symptom_picker_screen.dart';
 
 enum _DayType { none, period, predictedPeriod, ovulation, fertile }
+
+/// 패널이 접혔을 때 / 펼쳐졌을 때 화면 높이 비율.
+const double _kPanelMin = 0.45;
+const double _kPanelMax = 0.92;
 
 class CycleScreen extends ConsumerStatefulWidget {
   const CycleScreen({super.key});
@@ -31,6 +28,42 @@ class CycleScreen extends ConsumerStatefulWidget {
 class _CycleScreenState extends ConsumerState<CycleScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+
+  final _sheetController = DraggableScrollableController();
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sheetController.addListener(_onSheetMove);
+  }
+
+  @override
+  void dispose() {
+    _sheetController.removeListener(_onSheetMove);
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  /// 드래그로 시트가 절반 이상 올라오면 화살표 방향을 뒤집는다.
+  void _onSheetMove() {
+    if (!_sheetController.isAttached) return;
+    final exp = _sheetController.size > (_kPanelMin + _kPanelMax) / 2;
+    if (exp != _expanded) setState(() => _expanded = exp);
+  }
+
+  /// 가운데 화살표 탭: 접힘 ↔ 펼침 토글.
+  void _toggleSheet() {
+    if (!_sheetController.isAttached) return;
+    final target = _sheetController.size > (_kPanelMin + _kPanelMax) / 2
+        ? _kPanelMin
+        : _kPanelMax;
+    _sheetController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
 
   /// 특정 날짜의 주기 의미(생리/예측/배란/가임). 실제 기록이 예측보다 우선.
   _DayType _typeOf(DateTime day, List<CycleLog> logs, CyclePrediction? pred,
@@ -66,6 +99,21 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
         _DayType.none => null,
       };
 
+  void _showLegend() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('표시 안내'),
+        content: const SingleChildScrollView(child: _Legend()),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(cycleLogsProvider);
@@ -74,7 +122,6 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
     final events = ref.watch(dayEventsProvider).value ?? const [];
     final pillSeq = ref.watch(pillSequenceProvider);
 
-    // 날짜별 이벤트 묶음.
     final eventsByDay = <DateTime, List<DayEvent>>{};
     for (final e in events) {
       (eventsByDay[DateCalc.dateOnly(e.date)] ??= []).add(e);
@@ -87,82 +134,102 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
         title: const Text('주기'),
         actions: [
           IconButton(
+            tooltip: '표시 안내',
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showLegend,
+          ),
+          IconButton(
             tooltip: '주기 설정',
             icon: const Icon(Icons.tune),
             onPressed: () => CycleSettingsDialog.show(context),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => QuickRecordSheet.show(
-            context, _selectedDay ?? DateTime.now()),
-        child: const Icon(Icons.add),
-      ),
       body: logsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
-        data: (logs) => ListView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
-          children: [
-            if (pred != null) _PredictionCard(pred: pred),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: TableCalendar(
-                  locale: 'ko_KR',
-                  firstDay: DateTime(2015),
-                  lastDay: DateTime(2100),
-                  focusedDay: _focusedDay,
-                  rowHeight: 60,
-                  selectedDayPredicate: (d) => isSameDay(d, _selectedDay),
-                  onDaySelected: (selected, focused) => setState(() {
-                    _selectedDay = selected;
-                    _focusedDay = focused;
-                  }),
-                  availableCalendarFormats: const {CalendarFormat.month: '월'},
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, _) => _dayCell(
-                        day,
-                        _typeOf(day, logs, pred, periodLength),
-                        eventsOn(day),
-                        pillSeq),
-                    // 전달/다음달 날짜(예: 6월 그리드의 5월 31일)도 표시가 보이게.
-                    outsideBuilder: (context, day, _) => _dayCell(
-                        day,
-                        _typeOf(day, logs, pred, periodLength),
-                        eventsOn(day),
-                        pillSeq,
-                        outside: true),
-                    todayBuilder: (context, day, _) => _dayCell(
-                        day,
-                        _typeOf(day, logs, pred, periodLength),
-                        eventsOn(day),
-                        pillSeq,
-                        today: true),
-                    selectedBuilder: (context, day, _) => _dayCell(
-                        day,
-                        _typeOf(day, logs, pred, periodLength),
-                        eventsOn(day),
-                        pillSeq,
-                        selected: true),
+        data: (logs) {
+          final selDay = _selectedDay ?? DateCalc.dateOnly(DateTime.now());
+          final screenH = MediaQuery.of(context).size.height;
+          return Stack(
+            children: [
+              // 배경: 달력. 접힌 패널 높이만큼 아래 여백을 둬 가려지지 않게.
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  padding:
+                      EdgeInsets.fromLTRB(12, 8, 12, screenH * _kPanelMin + 16),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: TableCalendar(
+                        locale: 'ko_KR',
+                        firstDay: DateTime(2015),
+                        lastDay: DateTime(2100),
+                        focusedDay: _focusedDay,
+                        rowHeight: 56,
+                        selectedDayPredicate: (d) => isSameDay(d, _selectedDay),
+                        onDaySelected: (selected, focused) {
+                          // 날짜 탭 → 선택 표시. 패널은 그 날짜로 자동 갱신된다.
+                          setState(() {
+                            _selectedDay = selected;
+                            _focusedDay = focused;
+                          });
+                        },
+                        availableCalendarFormats: const {
+                          CalendarFormat.month: '월'
+                        },
+                        headerStyle: const HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                        ),
+                        calendarBuilders: CalendarBuilders(
+                          defaultBuilder: (context, day, _) => _dayCell(
+                              day,
+                              _typeOf(day, logs, pred, periodLength),
+                              eventsOn(day),
+                              pillSeq),
+                          outsideBuilder: (context, day, _) => _dayCell(
+                              day,
+                              _typeOf(day, logs, pred, periodLength),
+                              eventsOn(day),
+                              pillSeq,
+                              outside: true),
+                          todayBuilder: (context, day, _) => _dayCell(
+                              day,
+                              _typeOf(day, logs, pred, periodLength),
+                              eventsOn(day),
+                              pillSeq,
+                              today: true),
+                          selectedBuilder: (context, day, _) => _dayCell(
+                              day,
+                              _typeOf(day, logs, pred, periodLength),
+                              eventsOn(day),
+                              pillSeq,
+                              selected: true),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const _Legend(),
-            const SizedBox(height: 8),
-            _SelectedDayRecords(
-              day: _selectedDay ?? DateCalc.dateOnly(DateTime.now()),
-              logs: logs,
-              events: eventsOn(_selectedDay ?? DateTime.now()),
-              periodLength: periodLength,
-            ),
-          ],
-        ),
+              // 하단 상시 기록 패널 (드래그/화살표로 확장·축소).
+              DraggableScrollableSheet(
+                controller: _sheetController,
+                initialChildSize: _kPanelMin,
+                minChildSize: _kPanelMin,
+                maxChildSize: _kPanelMax,
+                snap: true,
+                snapSizes: const [_kPanelMin, _kPanelMax],
+                builder: (context, scrollController) => _RecordPanel(
+                  date: selDay,
+                  scrollController: scrollController,
+                  expanded: _expanded,
+                  onToggle: _toggleSheet,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -176,7 +243,6 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
         ? Colors.white
         : (outside ? Colors.grey.shade400 : Colors.black87);
 
-    // 피임약 정 번호와 그 외 이벤트 아이콘 분리.
     final pillNums = events
         .where((e) => e.type == 'pill')
         .map((e) => pillSeq[e.id])
@@ -221,7 +287,6 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 피임약: 아이콘 + 정 번호 배지 (예: 💊6 또는 💊6,7)
                       if (pillNums.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -233,8 +298,7 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(pillMeta.icon,
-                                  size: 9, color: Colors.white),
+                              Icon(pillMeta.icon, size: 9, color: Colors.white),
                               const SizedBox(width: 1),
                               Text(
                                 pillNums.join(','),
@@ -246,7 +310,6 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
                             ],
                           ),
                         ),
-                      // 그 외 이벤트 아이콘
                       for (final e in otherEvents.take(2))
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 0.5),
@@ -265,93 +328,79 @@ class _CycleScreenState extends ConsumerState<CycleScreen> {
   }
 }
 
-class _PredictionCard extends StatelessWidget {
-  const _PredictionCard({required this.pred});
+/// 하단 상시 기록 패널: 가운데 화살표 핸들 + 날짜 헤더 + 기록 목록.
+class _RecordPanel extends StatelessWidget {
+  const _RecordPanel({
+    required this.date,
+    required this.scrollController,
+    required this.expanded,
+    required this.onToggle,
+  });
 
-  final CyclePrediction pred;
+  final DateTime date;
+  final ScrollController scrollController;
+  final bool expanded;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final today = DateCalc.dateOnly(DateTime.now());
-    final dDay = pred.daysUntilNextPeriod(today);
-    final fmt = DateFormat('M월 d일', 'ko');
-
-    final String headline;
-    if (dDay > 0) {
-      headline = '다음 생리까지 D-$dDay';
-    } else if (dDay == 0) {
-      headline = '오늘이 생리 예정일이에요';
-    } else {
-      headline = '생리 예정일이 ${-dDay}일 지났어요';
-    }
-
-    return Card(
-      color: AppTheme.primary.withValues(alpha: 0.12),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(headline,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _row(Icons.water_drop, AppTheme.predicted, '다음 생리 예정',
-                fmt.format(pred.nextPeriod)),
-            _row(Icons.brightness_5, AppTheme.ovulation, '배란 예정일',
-                fmt.format(pred.ovulation)),
-            _row(Icons.eco, AppTheme.fertile, '가임기',
-                '${fmt.format(pred.fertileStart)} ~ ${fmt.format(pred.fertileEnd)}'),
-            const SizedBox(height: 6),
-            Row(
+    final headerFmt = DateFormat('M월 d일 (E)', 'ko');
+    return Material(
+      elevation: 12,
+      color: Theme.of(context).cardColor,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // 가운데 화살표 핸들 (탭: 확장/축소 토글)
+          InkWell(
+            onTap: onToggle,
+            child: SizedBox(
+              height: 40,
+              width: double.infinity,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Icon(
+                    expanded
+                        ? Icons.keyboard_arrow_down
+                        : Icons.keyboard_arrow_up,
+                    size: 22,
+                    color: Colors.grey.shade500,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    '주기 ${pred.cycleLength}일 · '
-                    '${pred.isAuto ? '기록 기반 자동 계산' : '직접 설정'} · 참고용',
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ),
-                InkWell(
-                  onTap: () => CycleSettingsDialog.show(context),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.edit, size: 14, color: AppTheme.secondary),
-                      SizedBox(width: 2),
-                      Text('수정',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.secondary,
-                              fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
+                Text('${headerFmt.format(date)} 기록',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _row(IconData icon, Color color, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Text(label),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: DayRecordList(date: date, scrollController: scrollController),
+          ),
         ],
       ),
     );
   }
 }
 
+/// 캘린더 색/아이콘 표시 안내 (도움말 다이얼로그에서 사용).
 class _Legend extends StatelessWidget {
   const _Legend();
 
@@ -376,233 +425,30 @@ class _Legend extends StatelessWidget {
             Text(label, style: const TextStyle(fontSize: 12)),
           ],
         );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1줄: 자동 계산되는 주기 항목
-          Wrap(
-            spacing: 14,
-            runSpacing: 8,
-            children: [
-              dot(AppTheme.period, '생리'),
-              dot(AppTheme.predicted, '생리예측'),
-              dot(AppTheme.ovulation, '배란'),
-              dot(AppTheme.fertile, '가임기'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 2줄: 직접 기록하는 항목 (약복용·주사·병원·임신·피임약)
-          Wrap(
-            spacing: 14,
-            runSpacing: 8,
-            children: [
-              for (final m in kEventTypes.values) icon(m.icon, m.color, m.label),
-              icon(pillMeta.icon, pillMeta.color, pillMeta.label),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 선택한 날짜의 모든 기록(생리 + 이벤트)을 목록으로 보여준다.
-/// 항목을 탭하면 편집, 휴지통으로 삭제.
-class _SelectedDayRecords extends ConsumerWidget {
-  const _SelectedDayRecords({
-    required this.day,
-    required this.logs,
-    required this.events,
-    required this.periodLength,
-  });
-
-  final DateTime day;
-  final List<CycleLog> logs;
-  final List<DayEvent> events;
-  final int periodLength;
-
-  /// 이 날짜를 포함하는 생리 기록(있으면).
-  CycleLog? _periodLogFor() {
-    final d = DateCalc.dateOnly(day);
-    for (final log in logs) {
-      final start = DateCalc.dateOnly(log.startDate);
-      final end = log.endDate != null
-          ? DateCalc.dateOnly(log.endDate!)
-          : start.add(Duration(days: periodLength - 1));
-      if (!d.isBefore(start) && !d.isAfter(end)) return log;
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.read(databaseProvider);
-    final pillSeq = ref.watch(pillSequenceProvider);
-    final periodLog = _periodLogFor();
-    final headerFmt = DateFormat('M월 d일 (E)', 'ko');
-
-    // 이 날짜의 증상 태그(있으면).
-    final allSymptoms = ref.watch(daySymptomsProvider).value ?? const [];
-    final daySym = allSymptoms
-        .where((s) => DateCalc.dateOnly(s.date) == DateCalc.dateOnly(day))
-        .cast<DaySymptom?>()
-        .firstOrNull;
-    // 이 날짜의 하루 노트(있으면).
-    final allNotes = ref.watch(dayNotesProvider).value ?? const [];
-    final dayNote = allNotes
-        .where((n) => DateCalc.dateOnly(n.date) == DateCalc.dateOnly(day))
-        .cast<DayNote?>()
-        .firstOrNull;
-    final hasNote = dayNote != null &&
-        ((dayNote.memo ?? '').isNotEmpty ||
-            dayNote.weather != null ||
-            dayNote.mood != null);
-    final hasAny = periodLog != null ||
-        events.isNotEmpty ||
-        daySym != null ||
-        hasNote;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Text('${headerFmt.format(day)} 기록',
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Wrap(
+          spacing: 14,
+          runSpacing: 8,
+          children: [
+            dot(AppTheme.period, '생리'),
+            dot(AppTheme.predicted, '생리예측'),
+            dot(AppTheme.ovulation, '배란'),
+            dot(AppTheme.fertile, '가임기'),
+          ],
         ),
-        if (!hasAny)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  const Icon(Icons.edit_calendar, color: Colors.grey),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text('이 날의 기록이 없어요.\n+ 버튼으로 추가해 보세요.',
-                        style: TextStyle(color: Colors.grey.shade600)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        // 생리 기록
-        if (periodLog != null)
-          Card(
-            child: ListTile(
-              onTap: () =>
-                  AddCycleSheet.show(context, existing: periodLog),
-              leading: const CircleAvatar(
-                backgroundColor: AppTheme.period,
-                child: Icon(Icons.water_drop, color: Colors.white, size: 20),
-              ),
-              title: const Text('생리'),
-              subtitle: Text(_periodSubtitle(periodLog)),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => db.deleteCycleLog(periodLog.id),
-              ),
-            ),
-          ),
-        // 증상 기록 (칩 선택) — 탭하면 수정, 휴지통으로 삭제
-        if (daySym != null)
-          Card(
-            child: ListTile(
-              onTap: () => SymptomPickerScreen.show(context, day),
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFEF9A9A),
-                child: Icon(Icons.healing, color: Colors.white, size: 20),
-              ),
-              title: const Text('증상'),
-              subtitle: Text(parseSymptoms(daySym.symptoms).join(', ')),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => db.deleteDaySymptom(daySym.id),
-              ),
-            ),
-          ),
-        // 하루 노트 (날씨·기분·메모)
-        if (hasNote)
-          Card(
-            child: ListTile(
-              onTap: () => DayNoteScreen.show(context, day),
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF7E57C2),
-                child: Icon(Icons.edit_note, color: Colors.white, size: 20),
-              ),
-              title: const Text('노트'),
-              subtitle: Text(
-                (dayNote.memo ?? '').isNotEmpty
-                    ? dayNote.memo!
-                    : '날씨·기분 기록됨',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => db.deleteDayNote(dayNote.id),
-              ),
-            ),
-          ),
-        // 이벤트 기록 (약/주사/병원/임신/피임약)
-        ...events.map((e) {
-          final meta = eventMeta(e.type);
-          final isPill = e.type == 'pill';
-          // 피임약은 정 번호만, 그 외는 제목/메모/시간 표시.
-          final String? subtitle;
-          if (isPill) {
-            final n = pillSeq[e.id];
-            subtitle = n != null ? '$n정' : null;
-          } else {
-            final timeStr = typeUsesTime(e.type)
-                ? DateFormat('a h:mm', 'ko').format(e.date)
-                : null;
-            final parts = [
-              ?timeStr,
-              if (e.title != null) e.title!,
-              if (e.note != null) e.note!,
-            ];
-            subtitle = parts.isEmpty ? null : parts.join(' · ');
-          }
-          return Card(
-            child: ListTile(
-              onTap: isPill
-                  ? () => PillSettingsDialog.show(context)
-                  : (meta != null
-                      ? () =>
-                          AddEventSheet.show(context, type: e.type, existing: e)
-                      : null),
-              leading: CircleAvatar(
-                backgroundColor: meta?.color ?? Colors.grey,
-                child: Icon(meta?.icon ?? Icons.circle,
-                    color: Colors.white, size: 20),
-              ),
-              title: Text(meta?.label ?? e.type),
-              subtitle: subtitle != null ? Text(subtitle) : null,
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => db.deleteDayEvent(e.id),
-              ),
-            ),
-          );
-        }),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 14,
+          runSpacing: 8,
+          children: [
+            for (final m in kEventTypes.values) icon(m.icon, m.color, m.label),
+            icon(pillMeta.icon, pillMeta.color, pillMeta.label),
+          ],
+        ),
       ],
     );
-  }
-
-  String _periodSubtitle(CycleLog log) {
-    final flowLabel = switch (log.flow) {
-      1 => '적음',
-      3 => '많음',
-      _ => '보통',
-    };
-    final duration = log.endDate != null
-        ? '${DateCalc.daysBetween(log.startDate, log.endDate!) + 1}일'
-        : '진행/미입력';
-    return '$duration · 출혈량 $flowLabel'
-        '${log.symptoms != null ? ' · ${log.symptoms}' : ''}';
   }
 }

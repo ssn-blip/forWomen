@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 임신/배란테스트 촬영 가이드 모달. "기록 시작" 시 [onStart] 호출.
 class TestGuideSheet extends StatelessWidget {
@@ -52,14 +53,9 @@ class TestGuideSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
-            Center(
-              child: Text(
-                '${isPregnancy ? '임신테스트' : '배란테스트'} 촬영 가이드',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
+            const SizedBox(height: 8),
+            SheetHeader(
+                title: '${isPregnancy ? '임신테스트' : '배란테스트'} 촬영 가이드'),
             const SizedBox(height: 14),
             // 예시 사진
             ClipRRect(

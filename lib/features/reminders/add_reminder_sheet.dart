@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/widgets/sheet_header.dart';
 import 'reminders_providers.dart';
 
 /// 알림 등록 바텀시트.
@@ -79,11 +80,7 @@ class _State extends ConsumerState<AddReminderSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
-              child: Text('알림 등록',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
+            const SheetHeader(title: '알림 등록'),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,

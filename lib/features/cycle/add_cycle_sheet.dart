@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/db/database.dart';
 import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/sheet_header.dart';
 
 /// 생리 기록 입력/편집 바텀시트.
 /// [existing]이 주어지면 편집 모드(업데이트), 아니면 추가 모드.
@@ -140,11 +141,9 @@ class _AddCycleSheetState extends ConsumerState<AddCycleSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(_isEditing ? '생리 기록 수정' : '생리 기록',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            SheetHeader(title: _isEditing ? '생리 기록 수정' : '생리 기록'),
+            const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.play_arrow, color: AppTheme.period),
