@@ -102,7 +102,7 @@ class _State extends ConsumerState<AddReminderSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _bodyCtrl,
-              decoration: const InputDecoration(labelText: '메모 (선택)'),
+              decoration: const InputDecoration(labelText: '메모 (선택사항)'),
             ),
             const SizedBox(height: 8),
             Row(

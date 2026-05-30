@@ -133,13 +133,13 @@ class _State extends ConsumerState<BirthRecordSheet> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: const InputDecoration(
-                  labelText: '출생 체중 (kg, 선택)', suffixText: 'kg'),
+                  labelText: '출생 체중 (kg, 선택사항)', suffixText: 'kg'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _noteCtrl,
               decoration: const InputDecoration(
-                  labelText: '메모 (분만 방법, 신장 등 선택)'),
+                  labelText: '메모 (분만 방법, 신장 등 선택사항)'),
               maxLines: 2,
             ),
             const SizedBox(height: 20),

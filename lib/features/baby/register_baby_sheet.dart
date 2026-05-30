@@ -82,7 +82,8 @@ class _State extends ConsumerState<RegisterBabySheet> {
             },
           ),
           const SizedBox(height: 8),
-          const Text('성별 (선택)', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('성별 (선택사항)',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SegmentedButton<String?>(
             emptySelectionAllowed: true,

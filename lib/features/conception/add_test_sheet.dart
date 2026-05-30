@@ -278,7 +278,7 @@ class _State extends ConsumerState<AddTestSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(labelText: '메모 (선택)'),
+              decoration: const InputDecoration(labelText: '메모 (선택사항)'),
               maxLines: 2,
             ),
             const SizedBox(height: 16),

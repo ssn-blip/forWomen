@@ -195,7 +195,7 @@ class _SymptomState extends ConsumerState<AddSymptomSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(labelText: '메모 (선택)'),
+              decoration: const InputDecoration(labelText: '메모 (선택사항)'),
               maxLines: 2,
             ),
             const SizedBox(height: 20),

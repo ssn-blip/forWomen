@@ -154,7 +154,7 @@ class _AddCycleSheetState extends ConsumerState<AddCycleSheet> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.stop, color: Colors.grey),
-              title: const Text('종료일 (선택)'),
+              title: const Text('종료일 (선택사항)'),
               trailing: Text(_end == null ? '미입력' : fmt.format(_end!)),
               onTap: () => _pickDate(isStart: false),
             ),
@@ -191,7 +191,7 @@ class _AddCycleSheetState extends ConsumerState<AddCycleSheet> {
             TextField(
               controller: _noteCtrl,
               decoration: const InputDecoration(
-                labelText: '메모 (선택)',
+                labelText: '메모 (선택사항)',
                 hintText: '컨디션, 특이사항 등',
               ),
               maxLines: 2,

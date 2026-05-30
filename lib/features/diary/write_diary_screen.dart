@@ -100,9 +100,6 @@ class _State extends ConsumerState<WriteDiaryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.existing == null ? '일기 쓰기' : '일기 수정'),
-        actions: [
-          TextButton(onPressed: _save, child: const Text('저장')),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -152,7 +149,7 @@ class _State extends ConsumerState<WriteDiaryScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(labelText: '제목 (선택)'),
+            decoration: const InputDecoration(labelText: '제목 (선택사항)'),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -214,6 +211,16 @@ class _State extends ConsumerState<WriteDiaryScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _save,
+              style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14)),
+              child: const Text('저장'),
+            ),
           ),
         ],
       ),
