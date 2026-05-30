@@ -54,9 +54,10 @@ class HomeScreen extends ConsumerWidget {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipOval(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(7),
               child: Image.asset('assets/icon/icon.png',
-                  width: 30, height: 30, fit: BoxFit.cover),
+                  width: 32, height: 32, fit: BoxFit.cover),
             ),
             const SizedBox(width: 8),
             const Text('forWomen'),
