@@ -11,6 +11,7 @@ import 'cycle_settings.dart';
 import 'cycle_settings_dialog.dart';
 import 'day_event_types.dart';
 import 'quick_record_sheet.dart';
+import 'record_panel_settings_screen.dart';
 
 enum _DayType { none, period, predictedPeriod, ovulation, fertile }
 
@@ -381,12 +382,18 @@ class _RecordPanel extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 0, 8, 4),
             child: Row(
               children: [
                 Text('${headerFmt.format(date)} 기록',
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  tooltip: '기록 항목 편집',
+                  onPressed: () => RecordPanelSettingsScreen.show(context),
+                ),
               ],
             ),
           ),

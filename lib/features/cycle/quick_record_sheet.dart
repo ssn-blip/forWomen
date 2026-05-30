@@ -15,6 +15,7 @@ import 'cycle_providers.dart';
 import 'day_event_types.dart';
 import 'day_note_screen.dart';
 import 'pill_settings_dialog.dart';
+import 'record_panel_settings.dart';
 import 'symptom_catalog.dart';
 import 'symptom_picker_screen.dart';
 
@@ -115,6 +116,123 @@ class DayRecordList extends ConsumerWidget {
       }
     }
 
+    // 사용자가 정한 순서/표시 항목에 맞춰 행을 만든다.
+    Widget? rowFor(String key) {
+      switch (key) {
+        case 'period_start':
+          return _CheckRow(
+            icon: Icons.water_drop,
+            color: AppTheme.period,
+            label: '생리 시작',
+            value: periodStart != null,
+            onChanged: togglePeriodStart,
+          );
+        case 'period_end':
+          return _CheckRow(
+            icon: Icons.water_drop_outlined,
+            color: AppTheme.period,
+            label: '생리 종료',
+            value: periodEnd != null,
+            onChanged: togglePeriodEnd,
+          );
+        case 'love':
+          return _CheckRow(
+            icon: Icons.favorite,
+            color: const Color(0xFFF06292),
+            label: '사랑',
+            value: hasEvent('love'),
+            onChanged: (on) async {
+              if (on) {
+                await db.insertDayEvent(DayEventsCompanion(
+                  date: Value(day),
+                  type: const Value('love'),
+                ));
+              } else {
+                for (final e in dayEventsOf.where((e) => e.type == 'love')) {
+                  await db.deleteDayEvent(e.id);
+                }
+              }
+            },
+          );
+        case 'symptom':
+          return _PlusRow(
+            icon: Icons.healing,
+            color: const Color(0xFFEF9A9A),
+            label: '증상',
+            detail: symTags.isEmpty
+                ? null
+                : (symTags.length <= 3
+                    ? symTags.join(', ')
+                    : '${symTags.take(3).join(', ')} 외 ${symTags.length - 3}'),
+            onTap: () => SymptomPickerScreen.show(context, day),
+          );
+        case 'preg_test':
+          return _PlusRow(
+            icon: Icons.science,
+            color: const Color(0xFFBA68C8),
+            label: '임신테스트',
+            done: pregTest,
+            onTap: () => AddTestSheet.show(context, kind: 'pregnancy'),
+          );
+        case 'ovu_test':
+          return _PlusRow(
+            icon: Icons.science_outlined,
+            color: const Color(0xFF4DB6AC),
+            label: '배란테스트',
+            done: ovuTest,
+            onTap: () => AddTestSheet.show(context, kind: 'ovulation'),
+          );
+        case 'bbt':
+          return _PlusRow(
+            icon: Icons.thermostat,
+            color: const Color(0xFFFF8A65),
+            label: '기초체온',
+            detail: bbt != null ? '${bbt.temperature}℃' : null,
+            onTap: editTemp,
+          );
+        case 'medication':
+        case 'injection':
+        case 'hospital':
+        case 'pregnancy':
+          final meta = kEventTypes[key]!;
+          return _PlusRow(
+            icon: meta.icon,
+            color: meta.color,
+            label: meta.label,
+            done: hasEvent(key),
+            // 기록이 있으면 관리(수정·삭제·추가) 시트, 없으면 바로 추가.
+            onTap: () => hasEvent(key)
+                ? _EventManageSheet.show(context, type: key, day: day)
+                : AddEventSheet.show(context, type: key, initialDate: day),
+          );
+        case 'pill':
+          return _PlusRow(
+            icon: pillMeta.icon,
+            color: pillMeta.color,
+            label: pillMeta.label,
+            done: hasEvent('pill'),
+            onTap: () => PillSettingsDialog.show(context, initialDate: day),
+          );
+        case 'note':
+          return _PlusRow(
+            icon: Icons.edit_note,
+            color: const Color(0xFF7E57C2),
+            label: '노트',
+            detail: hasNote ? (dayNote.memo ?? '날씨·기분 기록됨') : null,
+            onTap: () => DayNoteScreen.show(context, day),
+          );
+        default:
+          return null;
+      }
+    }
+
+    final order = ref.watch(recordPanelOrderProvider);
+    final children = <Widget>[];
+    for (final key in order) {
+      final w = rowFor(key);
+      if (w != null) children.add(w);
+    }
+
     return ListView(
       controller: scrollController,
       physics: scrollController != null
@@ -122,99 +240,7 @@ class DayRecordList extends ConsumerWidget {
           : null,
       shrinkWrap: scrollController == null,
       padding: padding ?? const EdgeInsets.only(bottom: 24),
-      children: [
-        _CheckRow(
-          icon: Icons.water_drop,
-          color: AppTheme.period,
-          label: '생리 시작',
-          value: periodStart != null,
-          onChanged: togglePeriodStart,
-        ),
-        _CheckRow(
-          icon: Icons.water_drop_outlined,
-          color: AppTheme.period,
-          label: '생리 종료',
-          value: periodEnd != null,
-          onChanged: togglePeriodEnd,
-        ),
-        _PlusRow(
-          icon: Icons.healing,
-          color: const Color(0xFFEF9A9A),
-          label: '증상',
-          detail: symTags.isEmpty
-              ? null
-              : (symTags.length <= 3
-                  ? symTags.join(', ')
-                  : '${symTags.take(3).join(', ')} 외 ${symTags.length - 3}'),
-          onTap: () => SymptomPickerScreen.show(context, day),
-        ),
-        _PlusRow(
-          icon: Icons.science,
-          color: const Color(0xFFBA68C8),
-          label: '임신테스트',
-          done: pregTest,
-          onTap: () => AddTestSheet.show(context, kind: 'pregnancy'),
-        ),
-        _PlusRow(
-          icon: Icons.science_outlined,
-          color: const Color(0xFF4DB6AC),
-          label: '배란테스트',
-          done: ovuTest,
-          onTap: () => AddTestSheet.show(context, kind: 'ovulation'),
-        ),
-        _PlusRow(
-          icon: Icons.thermostat,
-          color: const Color(0xFFFF8A65),
-          label: '기초체온',
-          detail: bbt != null ? '${bbt.temperature}℃' : null,
-          onTap: editTemp,
-        ),
-        _CheckRow(
-          icon: Icons.favorite,
-          color: const Color(0xFFF06292),
-          label: '사랑',
-          value: hasEvent('love'),
-          onChanged: (on) async {
-            if (on) {
-              await db.insertDayEvent(DayEventsCompanion(
-                date: Value(day),
-                type: const Value('love'),
-              ));
-            } else {
-              for (final e in dayEventsOf.where((e) => e.type == 'love')) {
-                await db.deleteDayEvent(e.id);
-              }
-            }
-          },
-        ),
-        for (final meta in kEventTypes.values)
-          if (meta.key != 'love')
-            _PlusRow(
-              icon: meta.icon,
-              color: meta.color,
-              label: meta.label,
-              done: hasEvent(meta.key),
-              // 기록이 있으면 관리(수정·삭제·추가) 시트, 없으면 바로 추가.
-              onTap: () => hasEvent(meta.key)
-                  ? _EventManageSheet.show(context, type: meta.key, day: day)
-                  : AddEventSheet.show(context,
-                      type: meta.key, initialDate: day),
-            ),
-        _PlusRow(
-          icon: pillMeta.icon,
-          color: pillMeta.color,
-          label: pillMeta.label,
-          done: hasEvent('pill'),
-          onTap: () => PillSettingsDialog.show(context, initialDate: day),
-        ),
-        _PlusRow(
-          icon: Icons.edit_note,
-          color: const Color(0xFF7E57C2),
-          label: '노트',
-          detail: hasNote ? (dayNote.memo ?? '날씨·기분 기록됨') : null,
-          onTap: () => DayNoteScreen.show(context, day),
-        ),
-      ],
+      children: children,
     );
   }
 }
