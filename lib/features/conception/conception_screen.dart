@@ -54,6 +54,7 @@ class _TestTab extends ConsumerStatefulWidget {
 
 class _TestTabState extends ConsumerState<_TestTab> {
   String _filter = 'all'; // 'all' | 'pregnancy' | 'ovulation'
+  bool _menuOpen = false; // 테스트 종류 드롭다운 펼침 여부
 
   @override
   Widget build(BuildContext context) {
@@ -71,20 +72,58 @@ class _TestTabState extends ConsumerState<_TestTab> {
             children: [
               Column(
             children: [
-              // 전체/임신/배란 필터
+              // 필터: [전체 | 임신테스트 ▾] — 테스트를 누르면 아래로 종류 드롭다운.
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                 child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'all', label: Text('전체')),
-                    ButtonSegment(value: 'pregnancy', label: Text('임신테스트')),
-                    ButtonSegment(value: 'ovulation', label: Text('배란테스트')),
-                  ],
-                  selected: {_filter},
-                  onSelectionChanged: (s) => setState(() => _filter = s.first),
                   showSelectedIcon: false,
+                  segments: [
+                    const ButtonSegment(value: 'all', label: Text('전체')),
+                    ButtonSegment(
+                      value: 'test',
+                      label: Text(
+                          '${_filter == 'ovulation' ? '배란테스트' : '임신테스트'} ▾'),
+                    ),
+                  ],
+                  selected: {_filter == 'all' ? 'all' : 'test'},
+                  onSelectionChanged: (s) => setState(() {
+                    if (s.first == 'all') {
+                      _filter = 'all';
+                      _menuOpen = false;
+                    } else {
+                      _menuOpen = !_menuOpen;
+                    }
+                  }),
                 ),
               ),
+              // 테스트 종류 드롭다운 (임신테스트/배란테스트)
+              if (_menuOpen)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (final opt in const [
+                          ('pregnancy', '임신테스트'),
+                          ('ovulation', '배란테스트'),
+                        ])
+                          ListTile(
+                            dense: true,
+                            title: Text(opt.$2),
+                            trailing: _filter == opt.$1
+                                ? const Icon(Icons.check,
+                                    color: AppTheme.primary, size: 20)
+                                : null,
+                            onTap: () => setState(() {
+                              _filter = opt.$1;
+                              _menuOpen = false;
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               if (filtered.any((l) => (l.ratio ?? 0) > 0)) const _ScoreLegend(),
               Expanded(
                 child: filtered.isEmpty
