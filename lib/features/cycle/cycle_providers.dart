@@ -20,6 +20,11 @@ final daySymptomsProvider = StreamProvider<List<DaySymptom>>((ref) {
   return ref.watch(databaseProvider).watchDaySymptoms();
 });
 
+/// 날짜별 하루 노트 전체.
+final dayNotesProvider = StreamProvider<List<DayNote>>((ref) {
+  return ref.watch(databaseProvider).watchDayNotes();
+});
+
 /// 피임약(type 'pill') 이벤트에 복용 순서 번호(1,2,…)를 매긴다.
 /// 날짜 오름차순(같은 날은 id 순)으로 누적 번호 → eventId : 번호.
 /// 건너뛰거나 2알 먹어도 자동으로 다시 번호가 매겨진다.

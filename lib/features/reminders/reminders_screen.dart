@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/db/database.dart';
@@ -15,7 +16,16 @@ class RemindersScreen extends ConsumerWidget {
     final remindersAsync = ref.watch(remindersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('알림')),
+      appBar: AppBar(
+        title: const Text('알림'),
+        actions: [
+          IconButton(
+            tooltip: '주기 알림 설정',
+            icon: const Icon(Icons.event_repeat),
+            onPressed: () => context.push('/cycle-alarms'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => AddReminderSheet.show(context),
         icon: const Icon(Icons.add_alert),
@@ -25,12 +35,36 @@ class RemindersScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
         data: (reminders) {
-          if (reminders.isEmpty) return const _Empty();
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
-            itemCount: reminders.length,
-            separatorBuilder: (_, i) => const SizedBox(height: 4),
-            itemBuilder: (context, i) => _ReminderTile(reminder: reminders[i]),
+            children: [
+              // 주기 기반 자동 알림 진입 배너
+              Card(
+                color: AppTheme.primary.withValues(alpha: 0.08),
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: AppTheme.primary,
+                    child: Icon(Icons.event_repeat, color: Colors.white),
+                  ),
+                  title: const Text('주기 알림 설정'),
+                  subtitle:
+                      const Text('생리 예정·배란·가임기·기초체온·체중 측정 알림'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/cycle-alarms'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (reminders.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: _Empty(),
+                )
+              else
+                ...reminders.map((r) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: _ReminderTile(reminder: r),
+                    )),
+            ],
           );
         },
       ),

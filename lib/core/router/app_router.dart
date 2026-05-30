@@ -14,6 +14,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/info/info_screen.dart';
 import '../../features/pregnancy/pregnancy_screen.dart';
 import '../../features/records/records_screen.dart';
+import '../../features/reminders/cycle_alarm_screen.dart';
 import '../../features/reminders/reminders_screen.dart';
 import '../../features/stats/stats_screen.dart';
 import 'main_shell.dart';
@@ -73,6 +74,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/records',
         builder: (context, state) => const RecordsScreen(),
+      ),
+      GoRoute(
+        path: '/cycle-alarms',
+        builder: (context, state) => const CycleAlarmScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

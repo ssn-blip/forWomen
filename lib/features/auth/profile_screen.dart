@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../cycle/app_mode.dart';
 import '../cycle/cycle_settings_dialog.dart';
 import 'auth_controller.dart';
 
@@ -46,6 +47,8 @@ class ProfileScreen extends ConsumerWidget {
                 style: TextStyle(color: Colors.grey.shade600)),
           ),
           const SizedBox(height: 24),
+          const _ModeSelector(),
+          const SizedBox(height: 8),
           _SectionTile(
             icon: Icons.settings,
             title: '주기 설정 (평균 주기·생리기간)',
@@ -108,6 +111,68 @@ void _showInfoDialog(BuildContext context, String title, String body) {
       ],
     ),
   );
+}
+
+/// 모드 설정 (생리·피임 / 임신준비 / 임신).
+class _ModeSelector extends ConsumerWidget {
+  const _ModeSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(appModeProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 10),
+              child: Text('모드 설정',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold)),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: AppMode.values.map((m) {
+                final on = m == current;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => ref.read(appModeProvider.notifier).set(m),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: on
+                              ? AppTheme.primary
+                              : Colors.grey.shade200,
+                          child: Icon(m.icon,
+                              color: on ? Colors.white : Colors.grey.shade500),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(m.label,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: on ? AppTheme.primary : Colors.grey,
+                                fontWeight: on
+                                    ? FontWeight.bold
+                                    : FontWeight.normal)),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SectionTile extends StatelessWidget {

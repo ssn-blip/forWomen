@@ -12,6 +12,7 @@ import '../conception/conception_providers.dart';
 import 'add_event_sheet.dart';
 import 'cycle_providers.dart';
 import 'day_event_types.dart';
+import 'day_note_screen.dart';
 import 'pill_settings_dialog.dart';
 import 'symptom_catalog.dart';
 import 'symptom_picker_screen.dart';
@@ -40,6 +41,7 @@ class QuickRecordSheet extends ConsumerWidget {
     final symptoms = ref.watch(daySymptomsProvider).value ?? const [];
     final bbts = ref.watch(bbtLogsProvider).value ?? const [];
     final tests = ref.watch(testLogsProvider).value ?? const [];
+    final notes = ref.watch(dayNotesProvider).value ?? const [];
 
     bool sameDay(DateTime d) => DateCalc.dateOnly(d) == day;
 
@@ -61,6 +63,12 @@ class QuickRecordSheet extends ConsumerWidget {
     bool hasEvent(String type) => dayEventsOf.any((e) => e.type == type);
     final pregTest = tests.any((t) => t.kind == 'pregnancy' && sameDay(t.date));
     final ovuTest = tests.any((t) => t.kind == 'ovulation' && sameDay(t.date));
+    final dayNote =
+        notes.where((n) => sameDay(n.date)).cast<DayNote?>().firstOrNull;
+    final hasNote = dayNote != null &&
+        ((dayNote.memo ?? '').isNotEmpty ||
+            dayNote.weather != null ||
+            dayNote.mood != null);
 
     // 생리 시작 체크 토글
     Future<void> togglePeriodStart(bool on) async {
@@ -207,6 +215,14 @@ class QuickRecordSheet extends ConsumerWidget {
                     done: hasEvent('pill'),
                     onTap: () =>
                         PillSettingsDialog.show(context, initialDate: day),
+                  ),
+                  // 하루 노트
+                  _PlusRow(
+                    icon: Icons.edit_note,
+                    color: const Color(0xFF7E57C2),
+                    label: '노트',
+                    detail: hasNote ? (dayNote.memo ?? '날씨·기분 기록됨') : null,
+                    onTap: () => DayNoteScreen.show(context, day),
                   ),
                 ],
               ),

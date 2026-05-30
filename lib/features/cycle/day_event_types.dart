@@ -20,6 +20,13 @@ class EventTypeMeta {
 /// DayEvents 테이블에 저장되는 종류들. (생리는 CycleLogs로 별도 관리)
 /// 배란은 주기로 자동 계산·표시되므로 수동 기록 종류에서 제외한다.
 const Map<String, EventTypeMeta> kEventTypes = {
+  'love': EventTypeMeta(
+    key: 'love',
+    label: '사랑',
+    icon: Icons.favorite,
+    color: Color(0xFFF06292),
+    titleHint: '메모 (선택)',
+  ),
   'medication': EventTypeMeta(
     key: 'medication',
     label: '약 복용',

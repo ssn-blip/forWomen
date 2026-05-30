@@ -6659,6 +6659,393 @@ class DaySymptomsCompanion extends UpdateCompanion<DaySymptom> {
   }
 }
 
+class $DayNotesTable extends DayNotes with TableInfo<$DayNotesTable, DayNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weatherMeta = const VerificationMeta(
+    'weather',
+  );
+  @override
+  late final GeneratedColumn<String> weather = GeneratedColumn<String>(
+    'weather',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _moodMeta = const VerificationMeta('mood');
+  @override
+  late final GeneratedColumn<int> mood = GeneratedColumn<int>(
+    'mood',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _memoMeta = const VerificationMeta('memo');
+  @override
+  late final GeneratedColumn<String> memo = GeneratedColumn<String>(
+    'memo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, weather, mood, memo, synced];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('weather')) {
+      context.handle(
+        _weatherMeta,
+        weather.isAcceptableOrUnknown(data['weather']!, _weatherMeta),
+      );
+    }
+    if (data.containsKey('mood')) {
+      context.handle(
+        _moodMeta,
+        mood.isAcceptableOrUnknown(data['mood']!, _moodMeta),
+      );
+    }
+    if (data.containsKey('memo')) {
+      context.handle(
+        _memoMeta,
+        memo.isAcceptableOrUnknown(data['memo']!, _memoMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DayNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayNote(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      weather: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weather'],
+      ),
+      mood: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mood'],
+      ),
+      memo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}memo'],
+      ),
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
+    );
+  }
+
+  @override
+  $DayNotesTable createAlias(String alias) {
+    return $DayNotesTable(attachedDatabase, alias);
+  }
+}
+
+class DayNote extends DataClass implements Insertable<DayNote> {
+  final int id;
+  final DateTime date;
+
+  /// 'sunny' | 'cloudy' | 'rainy' | 'snowy' 등
+  final String? weather;
+
+  /// 기분 1(나쁨)~5(좋음)
+  final int? mood;
+  final String? memo;
+  final bool synced;
+  const DayNote({
+    required this.id,
+    required this.date,
+    this.weather,
+    this.mood,
+    this.memo,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    if (!nullToAbsent || weather != null) {
+      map['weather'] = Variable<String>(weather);
+    }
+    if (!nullToAbsent || mood != null) {
+      map['mood'] = Variable<int>(mood);
+    }
+    if (!nullToAbsent || memo != null) {
+      map['memo'] = Variable<String>(memo);
+    }
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  DayNotesCompanion toCompanion(bool nullToAbsent) {
+    return DayNotesCompanion(
+      id: Value(id),
+      date: Value(date),
+      weather: weather == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weather),
+      mood: mood == null && nullToAbsent ? const Value.absent() : Value(mood),
+      memo: memo == null && nullToAbsent ? const Value.absent() : Value(memo),
+      synced: Value(synced),
+    );
+  }
+
+  factory DayNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayNote(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      weather: serializer.fromJson<String?>(json['weather']),
+      mood: serializer.fromJson<int?>(json['mood']),
+      memo: serializer.fromJson<String?>(json['memo']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'weather': serializer.toJson<String?>(weather),
+      'mood': serializer.toJson<int?>(mood),
+      'memo': serializer.toJson<String?>(memo),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  DayNote copyWith({
+    int? id,
+    DateTime? date,
+    Value<String?> weather = const Value.absent(),
+    Value<int?> mood = const Value.absent(),
+    Value<String?> memo = const Value.absent(),
+    bool? synced,
+  }) => DayNote(
+    id: id ?? this.id,
+    date: date ?? this.date,
+    weather: weather.present ? weather.value : this.weather,
+    mood: mood.present ? mood.value : this.mood,
+    memo: memo.present ? memo.value : this.memo,
+    synced: synced ?? this.synced,
+  );
+  DayNote copyWithCompanion(DayNotesCompanion data) {
+    return DayNote(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      weather: data.weather.present ? data.weather.value : this.weather,
+      mood: data.mood.present ? data.mood.value : this.mood,
+      memo: data.memo.present ? data.memo.value : this.memo,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayNote(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('weather: $weather, ')
+          ..write('mood: $mood, ')
+          ..write('memo: $memo, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, date, weather, mood, memo, synced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayNote &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.weather == this.weather &&
+          other.mood == this.mood &&
+          other.memo == this.memo &&
+          other.synced == this.synced);
+}
+
+class DayNotesCompanion extends UpdateCompanion<DayNote> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String?> weather;
+  final Value<int?> mood;
+  final Value<String?> memo;
+  final Value<bool> synced;
+  const DayNotesCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.weather = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.memo = const Value.absent(),
+    this.synced = const Value.absent(),
+  });
+  DayNotesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    this.weather = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.memo = const Value.absent(),
+    this.synced = const Value.absent(),
+  }) : date = Value(date);
+  static Insertable<DayNote> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? weather,
+    Expression<int>? mood,
+    Expression<String>? memo,
+    Expression<bool>? synced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (weather != null) 'weather': weather,
+      if (mood != null) 'mood': mood,
+      if (memo != null) 'memo': memo,
+      if (synced != null) 'synced': synced,
+    });
+  }
+
+  DayNotesCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? date,
+    Value<String?>? weather,
+    Value<int?>? mood,
+    Value<String?>? memo,
+    Value<bool>? synced,
+  }) {
+    return DayNotesCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      weather: weather ?? this.weather,
+      mood: mood ?? this.mood,
+      memo: memo ?? this.memo,
+      synced: synced ?? this.synced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (weather.present) {
+      map['weather'] = Variable<String>(weather.value);
+    }
+    if (mood.present) {
+      map['mood'] = Variable<int>(mood.value);
+    }
+    if (memo.present) {
+      map['memo'] = Variable<String>(memo.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayNotesCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('weather: $weather, ')
+          ..write('mood: $mood, ')
+          ..write('memo: $memo, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6681,6 +7068,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BabyPhotosTable babyPhotos = $BabyPhotosTable(this);
   late final $DayEventsTable dayEvents = $DayEventsTable(this);
   late final $DaySymptomsTable daySymptoms = $DaySymptomsTable(this);
+  late final $DayNotesTable dayNotes = $DayNotesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6702,6 +7090,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     babyPhotos,
     dayEvents,
     daySymptoms,
+    dayNotes,
   ];
 }
 
@@ -10235,6 +10624,213 @@ typedef $$DaySymptomsTableProcessedTableManager =
       DaySymptom,
       PrefetchHooks Function()
     >;
+typedef $$DayNotesTableCreateCompanionBuilder =
+    DayNotesCompanion Function({
+      Value<int> id,
+      required DateTime date,
+      Value<String?> weather,
+      Value<int?> mood,
+      Value<String?> memo,
+      Value<bool> synced,
+    });
+typedef $$DayNotesTableUpdateCompanionBuilder =
+    DayNotesCompanion Function({
+      Value<int> id,
+      Value<DateTime> date,
+      Value<String?> weather,
+      Value<int?> mood,
+      Value<String?> memo,
+      Value<bool> synced,
+    });
+
+class $$DayNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weather => $composableBuilder(
+    column: $table.weather,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get memo => $composableBuilder(
+    column: $table.memo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weather => $composableBuilder(
+    column: $table.weather,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get memo => $composableBuilder(
+    column: $table.memo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get weather =>
+      $composableBuilder(column: $table.weather, builder: (column) => column);
+
+  GeneratedColumn<int> get mood =>
+      $composableBuilder(column: $table.mood, builder: (column) => column);
+
+  GeneratedColumn<String> get memo =>
+      $composableBuilder(column: $table.memo, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$DayNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayNotesTable,
+          DayNote,
+          $$DayNotesTableFilterComposer,
+          $$DayNotesTableOrderingComposer,
+          $$DayNotesTableAnnotationComposer,
+          $$DayNotesTableCreateCompanionBuilder,
+          $$DayNotesTableUpdateCompanionBuilder,
+          (DayNote, BaseReferences<_$AppDatabase, $DayNotesTable, DayNote>),
+          DayNote,
+          PrefetchHooks Function()
+        > {
+  $$DayNotesTableTableManager(_$AppDatabase db, $DayNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DayNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<String?> weather = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<String?> memo = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => DayNotesCompanion(
+                id: id,
+                date: date,
+                weather: weather,
+                mood: mood,
+                memo: memo,
+                synced: synced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime date,
+                Value<String?> weather = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<String?> memo = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+              }) => DayNotesCompanion.insert(
+                id: id,
+                date: date,
+                weather: weather,
+                mood: mood,
+                memo: memo,
+                synced: synced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayNotesTable,
+      DayNote,
+      $$DayNotesTableFilterComposer,
+      $$DayNotesTableOrderingComposer,
+      $$DayNotesTableAnnotationComposer,
+      $$DayNotesTableCreateCompanionBuilder,
+      $$DayNotesTableUpdateCompanionBuilder,
+      (DayNote, BaseReferences<_$AppDatabase, $DayNotesTable, DayNote>),
+      DayNote,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10271,4 +10867,6 @@ class $AppDatabaseManager {
       $$DayEventsTableTableManager(_db, _db.dayEvents);
   $$DaySymptomsTableTableManager get daySymptoms =>
       $$DaySymptomsTableTableManager(_db, _db.daySymptoms);
+  $$DayNotesTableTableManager get dayNotes =>
+      $$DayNotesTableTableManager(_db, _db.dayNotes);
 }

@@ -233,6 +233,20 @@ class DaySymptoms extends Table {
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 }
 
+/// 하루 노트 (날씨 + 기분 + 메모). 날짜 1건.
+class DayNotes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+
+  /// 'sunny' | 'cloudy' | 'rainy' | 'snowy' 등
+  TextColumn get weather => text().nullable()();
+
+  /// 기분 1(나쁨)~5(좋음)
+  IntColumn get mood => integer().nullable()();
+  TextColumn get memo => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // 데이터베이스
 // ─────────────────────────────────────────────────────────────────────────
@@ -254,6 +268,7 @@ class DaySymptoms extends Table {
   BabyPhotos,
   DayEvents,
   DaySymptoms,
+  DayNotes,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -262,7 +277,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -297,6 +312,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 9) {
             await m.createTable(daySymptoms);
+          }
+          if (from < 10) {
+            await m.createTable(dayNotes);
           }
         },
       );
@@ -573,6 +591,51 @@ class AppDatabase extends _$AppDatabase {
       (select(vaccinationRecords)
             ..orderBy([(t) => OrderingTerm.desc(t.doneDate)]))
           .watch();
+
+  // ── 하루 노트(날씨·기분·메모) ─────────────────────────────────────────
+  Stream<List<DayNote>> watchDayNotes() =>
+      (select(dayNotes)..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
+
+  Future<DayNote?> getDayNote(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return (select(dayNotes)
+          ..where((t) => t.date.isBetweenValues(start, end))
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// 노트 저장(모두 비면 삭제). 기존 1건 갱신, 없으면 추가.
+  Future<void> setDayNote(DateTime day,
+      {String? weather, int? mood, String? memo}) async {
+    final existing = await getDayNote(day);
+    final empty = (weather == null) &&
+        (mood == null) &&
+        (memo == null || memo.trim().isEmpty);
+    if (empty) {
+      if (existing != null) await deleteDayNote(existing.id);
+      return;
+    }
+    final companion = DayNotesCompanion(
+      weather: Value(weather),
+      mood: Value(mood),
+      memo: Value(memo == null || memo.trim().isEmpty ? null : memo.trim()),
+    );
+    if (existing != null) {
+      await (update(dayNotes)..where((t) => t.id.equals(existing.id)))
+          .write(companion);
+    } else {
+      await into(dayNotes).insert(DayNotesCompanion(
+        date: Value(day),
+        weather: Value(weather),
+        mood: Value(mood),
+        memo: Value(memo == null || memo.trim().isEmpty ? null : memo.trim()),
+      ));
+    }
+  }
+
+  Future<int> deleteDayNote(int id) =>
+      (delete(dayNotes)..where((t) => t.id.equals(id))).go();
 }
 
 LazyDatabase _openConnection() {

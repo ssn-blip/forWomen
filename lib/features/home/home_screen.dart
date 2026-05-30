@@ -8,6 +8,7 @@ import '../../core/db/database_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_calc.dart';
 import '../auth/auth_controller.dart';
+import '../cycle/app_mode.dart';
 import '../cycle/cycle_providers.dart';
 import '../pregnancy/pregnancy_providers.dart';
 import '../reminders/reminders_providers.dart';
@@ -33,9 +34,15 @@ class HomeScreen extends ConsumerWidget {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(
-            '오늘도 건강한 하루 되세요',
-            style: TextStyle(color: Colors.grey.shade600),
+          Row(
+            children: [
+              Text(
+                '오늘도 건강한 하루 되세요',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+              const Spacer(),
+              _ModeChip(mode: ref.watch(appModeProvider)),
+            ],
           ),
           const SizedBox(height: 16),
           const _TodaySummary(),
@@ -100,6 +107,40 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 현재 앱 모드를 보여주는 작은 칩 (탭하면 내정보로 이동해 변경).
+class _ModeChip extends StatelessWidget {
+  const _ModeChip({required this.mode});
+
+  final AppMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => context.go('/profile'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: AppTheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(mode.icon, size: 14, color: AppTheme.primary),
+            const SizedBox(width: 4),
+            Text('${mode.label} 모드',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

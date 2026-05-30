@@ -8,6 +8,7 @@ import '../baby/baby_providers.dart';
 import '../conception/conception_providers.dart';
 import '../cycle/cycle_providers.dart';
 import '../cycle/day_event_types.dart';
+import '../cycle/day_note_screen.dart';
 import '../cycle/symptom_catalog.dart';
 import '../pregnancy/pregnancy_providers.dart';
 
@@ -139,6 +140,27 @@ class RecordsScreen extends ConsumerWidget {
         category: '체중',
         title: '체중',
         subtitle: '${w.weightKg}kg',
+      ));
+    }
+
+    // 하루 노트
+    for (final n in ref.watch(dayNotesProvider).value ?? const <DayNote>[]) {
+      final parts = [
+        if (n.weather != null)
+          kWeathers
+                  .where((w) => w.key == n.weather)
+                  .map((w) => w.label)
+                  .firstOrNull ??
+              '',
+        if ((n.memo ?? '').isNotEmpty) n.memo!,
+      ].where((e) => e.isNotEmpty).toList();
+      items.add(_Rec(
+        date: n.date,
+        icon: Icons.edit_note,
+        color: const Color(0xFF7E57C2),
+        category: '노트',
+        title: '노트',
+        subtitle: parts.isEmpty ? '날씨·기분 기록' : parts.join(' · '),
       ));
     }
 

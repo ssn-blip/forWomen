@@ -13,6 +13,7 @@ import 'cycle_providers.dart';
 import 'cycle_settings.dart';
 import 'cycle_settings_dialog.dart';
 import 'day_event_types.dart';
+import 'day_note_screen.dart';
 import 'pill_settings_dialog.dart';
 import 'quick_record_sheet.dart';
 import 'symptom_catalog.dart';
@@ -448,8 +449,20 @@ class _SelectedDayRecords extends ConsumerWidget {
         .where((s) => DateCalc.dateOnly(s.date) == DateCalc.dateOnly(day))
         .cast<DaySymptom?>()
         .firstOrNull;
-    final hasAny =
-        periodLog != null || events.isNotEmpty || daySym != null;
+    // 이 날짜의 하루 노트(있으면).
+    final allNotes = ref.watch(dayNotesProvider).value ?? const [];
+    final dayNote = allNotes
+        .where((n) => DateCalc.dateOnly(n.date) == DateCalc.dateOnly(day))
+        .cast<DayNote?>()
+        .firstOrNull;
+    final hasNote = dayNote != null &&
+        ((dayNote.memo ?? '').isNotEmpty ||
+            dayNote.weather != null ||
+            dayNote.mood != null);
+    final hasAny = periodLog != null ||
+        events.isNotEmpty ||
+        daySym != null ||
+        hasNote;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,6 +521,29 @@ class _SelectedDayRecords extends ConsumerWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => db.deleteDaySymptom(daySym.id),
+              ),
+            ),
+          ),
+        // 하루 노트 (날씨·기분·메모)
+        if (hasNote)
+          Card(
+            child: ListTile(
+              onTap: () => DayNoteScreen.show(context, day),
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF7E57C2),
+                child: Icon(Icons.edit_note, color: Colors.white, size: 20),
+              ),
+              title: const Text('노트'),
+              subtitle: Text(
+                (dayNote.memo ?? '').isNotEmpty
+                    ? dayNote.memo!
+                    : '날씨·기분 기록됨',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => db.deleteDayNote(dayNote.id),
               ),
             ),
           ),
