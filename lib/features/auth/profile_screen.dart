@@ -124,7 +124,31 @@ class _ModeSelector extends ConsumerWidget {
                 final on = m == current;
                 return InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () => ref.read(appModeProvider.notifier).set(m),
+                  onTap: () async {
+                    if (!on) {
+                      await ref.read(appModeProvider.notifier).set(m);
+                    }
+                    if (!context.mounted) return;
+                    await showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: Row(
+                          children: [
+                            Icon(m.icon, color: AppTheme.primary),
+                            const SizedBox(width: 8),
+                            Text('${m.label} 모드'),
+                          ],
+                        ),
+                        content: Text(m.description),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('확인'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
