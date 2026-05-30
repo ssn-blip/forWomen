@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
-/// 카테고리 한 칸. [subs]가 있으면 누를 때 아래로 세분류가 펼쳐진다.
+/// 카테고리 한 칸. [subs]가 있으면 선택 시 아래로 세분류가 펼쳐진다.
 class CategoryGroup {
   const CategoryGroup(this.label, [this.subs]);
   final String label;
   final List<String>? subs;
 }
 
-/// 큰 분류(가로 칩) + 선택한 분류에 하위가 있으면 아래로 펼쳐지는 세분류 칩.
+/// 큰 분류(세그먼트 버튼) + 선택한 분류에 하위가 있으면 아래로 펼쳐지는 세분류 세그먼트.
 /// 선택이 바뀔 때마다 [onChanged]에 (큰분류, 세분류?)를 전달한다.
 /// 세분류가 null이면 "그 분류 전체"를 의미한다.
 class CategoryFilterBar extends StatefulWidget {
@@ -26,6 +24,9 @@ class CategoryFilterBar extends StatefulWidget {
   State<CategoryFilterBar> createState() => _CategoryFilterBarState();
 }
 
+/// 세분류 "전체"용 센티넬 값.
+const String _kSubAll = '__all__';
+
 class _CategoryFilterBarState extends State<CategoryFilterBar> {
   late String _top = widget.groups.first.label;
   String? _sub;
@@ -33,107 +34,57 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
   CategoryGroup get _current => widget.groups
       .firstWhere((g) => g.label == _top, orElse: () => widget.groups.first);
 
-  void _selectTop(String label) {
-    setState(() {
-      _top = label;
-      _sub = null;
-    });
-    widget.onChanged(_top, _sub);
-  }
-
-  void _selectSub(String? sub) {
-    setState(() => _sub = sub);
-    widget.onChanged(_top, _sub);
-  }
-
   @override
   Widget build(BuildContext context) {
     final subs = _current.subs;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 큰 분류 (연결된 세그먼트 버튼). 항목이 많아도 가로 스크롤.
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-          child: Row(
-            children: [
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+          child: SegmentedButton<String>(
+            showSelectedIcon: false,
+            segments: [
               for (final g in widget.groups)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _Chip(
-                    label: g.subs != null ? '${g.label} ▾' : g.label,
-                    selected: g.label == _top,
-                    onTap: () => _selectTop(g.label),
-                  ),
+                ButtonSegment(
+                  value: g.label,
+                  label: Text(g.subs != null ? '${g.label} ▾' : g.label),
                 ),
             ],
+            selected: {_top},
+            onSelectionChanged: (s) {
+              setState(() {
+                _top = s.first;
+                _sub = null;
+              });
+              widget.onChanged(_top, _sub);
+            },
           ),
         ),
-        // 선택한 분류에 하위가 있으면 세분류 칩을 아래로 펼친다.
+        // 하위가 있으면 세분류 세그먼트를 아래로 펼친다.
         if (subs != null)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _Chip(
-                    label: '전체',
-                    selected: _sub == null,
-                    small: true,
-                    onTap: () => _selectSub(null),
-                  ),
-                ),
+            child: SegmentedButton<String>(
+              showSelectedIcon: false,
+              segments: [
+                const ButtonSegment(value: _kSubAll, label: Text('전체')),
                 for (final s in subs)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _Chip(
-                      label: s,
-                      selected: _sub == s,
-                      small: true,
-                      onTap: () => _selectSub(s),
-                    ),
-                  ),
+                  ButtonSegment(value: s, label: Text(s)),
               ],
+              selected: {_sub ?? _kSubAll},
+              onSelectionChanged: (s) {
+                final v = s.first;
+                setState(() => _sub = v == _kSubAll ? null : v);
+                widget.onChanged(_top, _sub);
+              },
             ),
           ),
         const Divider(height: 1),
       ],
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.small = false,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool small;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      showCheckmark: false,
-      visualDensity: VisualDensity.compact,
-      labelStyle: TextStyle(
-        fontSize: small ? 12 : 13,
-        color: selected ? Colors.white : Colors.grey.shade700,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-      ),
-      selectedColor: AppTheme.primary,
-      backgroundColor: Colors.grey.shade100,
-      side: BorderSide(
-          color: selected ? AppTheme.primary : Colors.grey.shade300),
     );
   }
 }
